@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://apis.google.com/js/api.js" async defer></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header id="header">
+    <div class="header-left">
+      <div class="logo">⚡ Hub</div>
+    </div>
+    <div class="header-center">
+      <span id="date-display"></span>
+      <span class="time-sep">·</span>
+      <span id="time-display"></span>
+    </div>
+    <div class="header-right">
+      <button id="btn-calendar-connect" class="btn btn-outline" onclick="connectCalendar()">
+        <span class="btn-icon">📅</span> Connect Calendar
+      </button>
+      <div id="calendar-connected-badge" class="badge-connected hidden">📅 Calendar Connected</div>
+      <button class="btn btn-icon-only" onclick="openSettings()" title="Settings">⚙</button>
+    </div>
+  </header>
+
+  <!-- MAIN LAYOUT -->
+  <main id="main">
+
+    <!-- LEFT PANEL: Meetings + WBR -->
+    <aside id="left-panel">
+
+      <!-- MEETINGS -->
+      <section class="panel" id="meetings-panel">
+        <div class="panel-header">
+          <h2>Today's Meetings</h2>
+          <span id="meeting-count" class="count-badge"></span>
+        </div>
+        <div id="calendar-prompt" class="empty-state">
+          <p>Connect Google Calendar to see your meetings.</p>
+          <button class="btn btn-primary" onclick="connectCalendar()">Connect Calendar</button>
+        </div>
+        <div id="meetings-list" class="hidden"></div>
+        <div id="filtered-toggle" class="filtered-toggle hidden">
+          <button onclick="toggleFiltered()">
+            <span id="filtered-label">Show hidden meetings</span>
+          </button>
+        </div>
+        <div id="filtered-list" class="filtered-list hidden"></div>
+      </section>
+
+      <!-- WBR PANEL (contextual) -->
+      <section id="wbr-panel">
+        <div id="wbr-cards"></div>
+      </section>
+
+    </aside>
+
+    <!-- RIGHT PANEL: Resources -->
+    <section id="right-panel">
+
+      <div class="resources-header">
+        <h2>Resources</h2>
+        <div class="resources-controls">
+          <input type="text" id="resource-search" placeholder="Search resources…" oninput="renderResources()">
+          <button class="btn btn-primary" onclick="openAddResource()">+ Add</button>
+        </div>
+      </div>
+
+      <!-- SUGGESTED -->
+      <div id="suggested-section">
+        <div class="section-label">Suggested Today</div>
+        <div id="suggested-list" class="resource-row"></div>
+      </div>
+
+      <!-- CATEGORY TABS -->
+      <div id="category-tabs" class="category-tabs"></div>
+
+      <!-- RESOURCE GRID -->
+      <div id="resource-grid" class="resource-grid"></div>
+
+      <div id="empty-resources" class="empty-state hidden">
+        <p>No resources yet. Add your first link!</p>
+        <button class="btn btn-primary" onclick="openAddResource()">+ Add Resource</button>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- MODAL OVERLAY -->
+  <div id="modal-overlay" class="modal-overlay hidden" onclick="handleOverlayClick(event)">
+
+    <!-- SETTINGS MODAL -->
+    <div id="modal-settings" class="modal hidden">
+      <div class="modal-header">
+        <h3>Settings</h3>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+
+        <div class="settings-section">
+          <h4>Google Calendar</h4>
+          <p class="settings-hint">Create a project at <a href="https://console.cloud.google.com" target="_blank">console.cloud.google.com</a>, enable the Calendar API, and create an OAuth 2.0 Web Client ID.</p>
+          <label>Client ID
+            <input type="text" id="setting-client-id" placeholder="xxxx.apps.googleusercontent.com">
+          </label>
+        </div>
+
+        <div class="settings-section">
+          <h4>Meeting Filters</h4>
+          <p class="settings-hint">Meetings with these words in the title will be hidden.</p>
+          <div id="filter-tags" class="tag-list"></div>
+          <div class="tag-input-row">
+            <input type="text" id="new-filter-input" placeholder="Add keyword…" onkeydown="if(event.key==='Enter')addFilter()">
+            <button class="btn btn-sm" onclick="addFilter()">Add</button>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h4>WBR Schedule</h4>
+          <div class="wbr-setting">
+            <label>Merchant WBR — Day
+              <select id="setting-merchant-day">
+                <option value="0">Sunday</option>
+                <option value="1">Monday</option>
+                <option value="2">Tuesday</option>
+                <option value="3">Wednesday</option>
+                <option value="4">Thursday</option>
+                <option value="5">Friday</option>
+                <option value="6">Saturday</option>
+              </select>
+            </label>
+          </div>
+          <div class="wbr-setting">
+            <label>Iops WBR — Day
+              <select id="setting-iops-day">
+                <option value="0">Sunday</option>
+                <option value="1">Monday</option>
+                <option value="2">Tuesday</option>
+                <option value="3">Wednesday</option>
+                <option value="4">Thursday</option>
+                <option value="5">Friday</option>
+                <option value="6">Saturday</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h4>Categories</h4>
+          <div id="category-tags" class="tag-list"></div>
+          <div class="tag-input-row">
+            <input type="text" id="new-category-input" placeholder="Add category…" onkeydown="if(event.key==='Enter')addCategory()">
+            <button class="btn btn-sm" onclick="addCategory()">Add</button>
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+      </div>
+    </div>
+
+    <!-- ADD / EDIT RESOURCE MODAL -->
+    <div id="modal-resource" class="modal hidden">
+      <div class="modal-header">
+        <h3 id="modal-resource-title">Add Resource</h3>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="resource-id">
+        <label>Title *
+          <input type="text" id="resource-title" placeholder="e.g. Team Roster">
+        </label>
+        <label>URL *
+          <input type="url" id="resource-url" placeholder="https://…">
+        </label>
+        <label>Category
+          <select id="resource-category"></select>
+        </label>
+        <label>Tags <span class="hint">(comma-separated)</span>
+          <input type="text" id="resource-tags" placeholder="e.g. team, weekly, ops">
+        </label>
+        <label>Show on days <span class="hint">(check days this should be suggested)</span>
+          <div class="day-checkboxes" id="resource-days">
+            <label><input type="checkbox" value="1"> Mon</label>
+            <label><input type="checkbox" value="2"> Tue</label>
+            <label><input type="checkbox" value="3"> Wed</label>
+            <label><input type="checkbox" value="4"> Thu</label>
+            <label><input type="checkbox" value="5"> Fri</label>
+          </div>
+        </label>
+        <label>Calendar keywords <span class="hint">(suggest when meeting title contains)</span>
+          <input type="text" id="resource-cal-keywords" placeholder="e.g. WBR, Design Review">
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="btn-delete-resource" onclick="deleteResource()" style="margin-right:auto;color:var(--danger)">Delete</button>
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveResource()">Save</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
