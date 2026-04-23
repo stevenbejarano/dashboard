@@ -304,6 +304,11 @@ a:hover { text-decoration: underline; }
   padding: 14px 16px;
   box-shadow: var(--shadow-sm);
 }
+.wbr-card.wbr-due {
+  border-color: var(--danger);
+  border-left-color: var(--danger);
+  background: #FFF8F8;
+}
 
 .wbr-card-header {
   display: flex;

@@ -540,7 +540,7 @@ function trackClick(id) {
 // WBR LOGIC
 // ============================================================
 
-function isWBRDue(type) {
+function isWBRDueToday(type) {
   const today = new Date().getDay();
   if (type === 'merchant') {
     return today === (settings.wbr.merchant.dayOfWeek ?? 1);
@@ -549,34 +549,33 @@ function isWBRDue(type) {
     if (today !== (settings.wbr.iops.dayOfWeek ?? 3)) return false;
     const last = wbrState.iops ? new Date(wbrState.iops) : null;
     if (!last) return true;
-    const daysSince = (Date.now() - last) / 86400000;
-    return daysSince >= 13; // bi-weekly (~every 14 days)
+    return (Date.now() - last) / 86400000 >= 13;
   }
   return false;
 }
 
 function renderWBR() {
   const container = document.getElementById('wbr-cards');
-  const cards = [];
-
-  if (isWBRDue('merchant')) cards.push(wbrCardHTML('merchant', 'Merchant WBR', 'Weekly'));
-  if (isWBRDue('iops'))     cards.push(wbrCardHTML('iops', 'Iops WBR', 'Bi-Weekly'));
-
-  container.innerHTML = cards.join('');
+  // Cards are always visible — due day just highlights them
+  container.innerHTML = [
+    wbrCardHTML('merchant', 'Merchant WBR', 'Weekly'),
+    wbrCardHTML('iops',     'Iops WBR',     'Bi-Weekly')
+  ].join('');
 }
 
 function wbrCardHTML(type, name, freq) {
   const savedDraft = localStorage.getItem(`wbr_draft_${type}`) || '';
   const savedLink  = wbrLinks[type] || '';
+  const due        = isWBRDueToday(type);
   const openBtn    = savedLink
     ? `<a class="wbr-open-link" href="${escAttr(savedLink)}" target="_blank">Open this week's doc ↗</a>`
-    : `<span class="wbr-open-link" style="color:var(--text-light);cursor:default;">No doc linked yet — paste the link below</span>`;
+    : `<span class="wbr-open-link" style="color:var(--text-light);cursor:default;">Paste this week's link below</span>`;
 
   return `
-    <div class="wbr-card" id="wbr-${type}">
+    <div class="wbr-card${due ? ' wbr-due' : ''}" id="wbr-${type}">
       <div class="wbr-card-header">
         <span class="wbr-card-title">📊 ${escHtml(name)}</span>
-        <span class="wbr-badge">${escHtml(freq)}</span>
+        <span class="wbr-badge">${due ? '🔴 Due Today' : escHtml(freq)}</span>
       </div>
       ${openBtn}
       <div class="wbr-link-row">
@@ -864,6 +863,7 @@ function init() {
   renderResources();
   renderSuggested();
   renderWBR();
+  renderMetricsNeedColumn(); // Show performance bar immediately; updates after auth + column set
 
   // Keyboard shortcut: Escape to close modal
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
