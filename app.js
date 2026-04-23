@@ -50,7 +50,6 @@ let meetings      = [];   // from Google Calendar (runtime only)
 let metricValues  = {};   // { metricId: { current, previous, updatedAt } }
 let activeCategory = 'all';
 let showFiltered   = false;
-let gapiReady      = false;
 let tokenClient    = null;
 let accessToken    = null;
 
@@ -61,11 +60,30 @@ let accessToken    = null;
 function loadJSON(key, fallback) {
   try {
     const raw = localStorage.getItem(key);
-    if (!raw) return JSON.parse(JSON.stringify(fallback));
+    if (!raw) return deepClone(fallback);
     const parsed = JSON.parse(raw);
-    // Merge top-level keys from fallback if missing
-    return { ...JSON.parse(JSON.stringify(fallback)), ...parsed };
-  } catch { return JSON.parse(JSON.stringify(fallback)); }
+    if (typeof parsed !== 'object' || parsed === null) return deepClone(fallback);
+    // Deep merge: fallback fills in any missing nested keys
+    return deepMerge(deepClone(fallback), parsed);
+  } catch {
+    localStorage.removeItem(key); // clear corrupt data
+    return deepClone(fallback);
+  }
+}
+
+function deepClone(obj) { return JSON.parse(JSON.stringify(obj)); }
+
+function deepMerge(base, override) {
+  const out = { ...base };
+  for (const key of Object.keys(override)) {
+    if (override[key] && typeof override[key] === 'object' && !Array.isArray(override[key])
+        && base[key] && typeof base[key] === 'object') {
+      out[key] = deepMerge(base[key], override[key]);
+    } else {
+      out[key] = override[key];
+    }
+  }
+  return out;
 }
 
 function save() {
@@ -89,46 +107,74 @@ function updateClock() {
 }
 
 // ============================================================
-// GOOGLE CALENDAR
+// GOOGLE AUTH — auto-connects silently on every page load
 // ============================================================
 
-function connectCalendar() {
-  if (!settings.googleClientId) {
-    openSettings();
-    alert('Please enter your Google Client ID in Settings first.');
-    return;
-  }
-  if (!gapiReady) {
-    gapi.load('client', async () => {
-      await gapi.client.init({
-        discoveryDocs: [
-          'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest',
-          'https://sheets.googleapis.com/$discovery/rest?version=v4'
-        ]
-      });
-      gapiReady = true;
-      initTokenClient();
+let _gapiReady = false;
+let _gisReady  = false;
+
+// Called by onload on the gapi script tag
+function gapiLoaded() {
+  gapi.load('client', async () => {
+    await gapi.client.init({
+      discoveryDocs: [
+        'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest',
+        'https://sheets.googleapis.com/$discovery/rest?version=v4'
+      ]
     });
-  } else {
-    initTokenClient();
-  }
+    _gapiReady = true;
+    maybeAutoConnect();
+  });
 }
 
-function initTokenClient() {
+// Called by onload on the GIS script tag
+function gisLoaded() {
+  _gisReady = true;
+  maybeAutoConnect();
+}
+
+// Silently reconnects if Client ID is configured — no button click needed
+function maybeAutoConnect() {
+  if (!_gapiReady || !_gisReady || !settings.googleClientId) return;
+
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: settings.googleClientId,
     scope: 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/spreadsheets.readonly',
-    callback: async (tokenResponse) => {
-      if (tokenResponse.error) return;
-      accessToken = tokenResponse.access_token;
-      gapi.client.setToken({ access_token: accessToken });
-      document.getElementById('btn-calendar-connect').classList.add('hidden');
-      document.getElementById('calendar-connected-badge').classList.remove('hidden');
-      document.getElementById('calendar-prompt').classList.add('hidden');
-      document.getElementById('meetings-list').classList.remove('hidden');
-      await Promise.all([fetchMeetings(), fetchSheetMetrics()]);
-    }
+    callback: onAuthSuccess,
+    error_callback: () => { /* silent fail — leave Connect button visible */ }
   });
+
+  // prompt:'' = silent if already authorized, popup only on first use
+  tokenClient.requestAccessToken({ prompt: '' });
+}
+
+function onAuthSuccess(tokenResponse) {
+  if (tokenResponse.error) return;
+  accessToken = tokenResponse.access_token;
+  gapi.client.setToken({ access_token: accessToken });
+
+  document.getElementById('btn-calendar-connect').classList.add('hidden');
+  document.getElementById('calendar-connected-badge').classList.remove('hidden');
+  document.getElementById('calendar-prompt').classList.add('hidden');
+  document.getElementById('meetings-list').classList.remove('hidden');
+
+  Promise.all([fetchMeetings(), fetchSheetMetrics()]);
+
+  // Silently refresh the token 5 minutes before it expires (tokens last ~1 hour)
+  const expiresIn = (tokenResponse.expires_in || 3600) - 300;
+  setTimeout(() => { if (tokenClient) tokenClient.requestAccessToken({ prompt: '' }); }, expiresIn * 1000);
+}
+
+// Manual connect button — only needed if silent auth fails (first-time setup)
+function connectCalendar() {
+  if (!settings.googleClientId) {
+    openSettings();
+    return;
+  }
+  if (!tokenClient) {
+    alert('Google APIs are still loading — please try again in a moment.');
+    return;
+  }
   tokenClient.requestAccessToken({ prompt: '' });
 }
 
