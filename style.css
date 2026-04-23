@@ -874,6 +874,94 @@ a:hover { text-decoration: underline; }
 }
 
 /* ================================
+   PERFORMANCE BAR
+================================ */
+#performance-bar {
+  max-width: 1400px;
+  margin: 16px auto 0;
+  padding: 0 24px;
+}
+
+.performance-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.btn-refresh-metrics {
+  background: none;
+  border: none;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  transition: all 0.15s;
+}
+.btn-refresh-metrics:hover { background: var(--border); color: var(--text); }
+
+.metric-cards {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.metric-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  min-width: 160px;
+  flex: 1;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metric-card.metric-loading {
+  opacity: 0.5;
+}
+
+.metric-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+}
+
+.metric-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.metric-trend {
+  font-size: 12px;
+  font-weight: 500;
+  margin-top: 4px;
+}
+.trend-up      { color: #16A34A; }
+.trend-down    { color: var(--danger); }
+.trend-neutral { color: var(--text-muted); }
+
+.metric-updated {
+  font-size: 11px;
+  color: var(--text-light);
+  margin-top: 2px;
+}
+
+.metrics-error {
+  font-size: 12px;
+  color: var(--danger);
+  margin-top: 8px;
+}
+
+/* ================================
    RESPONSIVE
 ================================ */
 @media (max-width: 900px) {

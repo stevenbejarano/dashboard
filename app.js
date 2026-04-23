@@ -8,6 +8,8 @@
 // DEFAULT CONFIG
 // ============================================================
 
+const SHEET_ID = '17felUngAmt-TYcnrKfjKME3vftwi67hqVt1NJPwas4U';
+
 const DEFAULT_SETTINGS = {
   googleClientId: '',
   meetingFilters: [
@@ -23,7 +25,13 @@ const DEFAULT_SETTINGS = {
   wbr: {
     merchant: { dayOfWeek: 1 },   // Monday — change in Settings
     iops:     { dayOfWeek: 3 }    // Wednesday — change in Settings
-  }
+  },
+  // Each metric fetches a full row range and uses the last non-empty cell as current week.
+  // Add more metrics here as Sigma data moves into Sheets.
+  metrics: [
+    { id: 'same_day_ready', label: 'Same Day Ready',    tab: 'Q2 Weekly Trackers', row: 37, startCol: 'I', endCol: 'AZ' },
+    { id: 'active_day30',   label: 'Active by Day 30',  tab: 'Q2 Weekly Trackers', row: 94, startCol: 'I', endCol: 'AZ' }
+  ]
 };
 
 const DEFAULT_RESOURCES = [];
@@ -37,7 +45,8 @@ let resources   = loadJSON('dash_resources', DEFAULT_RESOURCES);
 let wbrState    = loadJSON('dash_wbr_state', { merchant: null, iops: null }); // lastCompleted dates
 // Stores the current week's doc URL, pasted in by the user each week
 let wbrLinks    = loadJSON('dash_wbr_links', { merchant: '', iops: '' });
-let meetings    = [];   // from Google Calendar (runtime only)
+let meetings      = [];   // from Google Calendar (runtime only)
+let metricValues  = {};   // { metricId: { current, previous, updatedAt } }
 let activeCategory = 'all';
 let showFiltered   = false;
 let gapiReady      = false;
@@ -91,7 +100,10 @@ function connectCalendar() {
   if (!gapiReady) {
     gapi.load('client', async () => {
       await gapi.client.init({
-        discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest']
+        discoveryDocs: [
+          'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest',
+          'https://sheets.googleapis.com/$discovery/rest?version=v4'
+        ]
       });
       gapiReady = true;
       initTokenClient();
@@ -104,7 +116,7 @@ function connectCalendar() {
 function initTokenClient() {
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: settings.googleClientId,
-    scope: 'https://www.googleapis.com/auth/calendar.readonly',
+    scope: 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/spreadsheets.readonly',
     callback: async (tokenResponse) => {
       if (tokenResponse.error) return;
       accessToken = tokenResponse.access_token;
@@ -113,7 +125,7 @@ function initTokenClient() {
       document.getElementById('calendar-connected-badge').classList.remove('hidden');
       document.getElementById('calendar-prompt').classList.add('hidden');
       document.getElementById('meetings-list').classList.remove('hidden');
-      await fetchMeetings();
+      await Promise.all([fetchMeetings(), fetchSheetMetrics()]);
     }
   });
   tokenClient.requestAccessToken({ prompt: '' });
@@ -239,6 +251,126 @@ function calendarColor(id) {
 function toggleFiltered() {
   showFiltered = !showFiltered;
   renderMeetings();
+}
+
+// ============================================================
+// GOOGLE SHEETS — PERFORMANCE METRICS
+// ============================================================
+
+async function fetchSheetMetrics() {
+  const metrics = settings.metrics || [];
+  if (!metrics.length) return;
+
+  renderMetricsLoading();
+
+  const ranges = metrics.map(m =>
+    `'${m.tab}'!${m.startCol}${m.row}:${m.endCol}${m.row}`
+  );
+
+  try {
+    const res = await gapi.client.sheets.spreadsheets.values.batchGet({
+      spreadsheetId: SHEET_ID,
+      ranges
+    });
+
+    const valueRanges = res.result.valueRanges || [];
+    valueRanges.forEach((vr, i) => {
+      const m = metrics[i];
+      const row = vr.values?.[0] || [];
+      // Filter to non-empty cells
+      const filled = row.filter(v => v !== '' && v != null);
+      const current  = filled[filled.length - 1]  ?? '—';
+      const previous = filled[filled.length - 2]  ?? null;
+      metricValues[m.id] = { current, previous, updatedAt: new Date() };
+    });
+
+    renderPerformanceWidget();
+  } catch (e) {
+    console.error('Sheets fetch failed', e);
+    renderMetricsError();
+  }
+}
+
+function findTrend(current, previous) {
+  if (previous == null) return null;
+  // Strip % and commas, parse as float
+  const parse = v => parseFloat(String(v).replace(/[%,]/g, ''));
+  const curr = parse(current);
+  const prev = parse(previous);
+  if (isNaN(curr) || isNaN(prev)) return null;
+  const diff   = curr - prev;
+  const isPerc = String(current).includes('%');
+  const fmt    = n => `${Math.abs(n).toFixed(1)}${isPerc ? '%' : ''}`;
+  if (Math.abs(diff) < 0.05) return { dir: 'neutral', label: '→ No change' };
+  return diff > 0
+    ? { dir: 'up',   label: `↑ ${fmt(diff)} vs last week` }
+    : { dir: 'down', label: `↓ ${fmt(diff)} vs last week` };
+}
+
+function renderPerformanceWidget() {
+  const bar = document.getElementById('performance-bar');
+  if (!bar) return;
+  const metrics = settings.metrics || [];
+
+  if (!metrics.length) { bar.classList.add('hidden'); return; }
+  bar.classList.remove('hidden');
+
+  const cards = metrics.map(m => {
+    const val   = metricValues[m.id];
+    const value = val?.current ?? '—';
+    const trend = val ? findTrend(val.current, val.previous) : null;
+    const trendHtml = trend
+      ? `<span class="metric-trend trend-${trend.dir}">${trend.label}</span>`
+      : '';
+    const updated = val?.updatedAt
+      ? `<span class="metric-updated">Updated ${formatRelativeTime(val.updatedAt)}</span>`
+      : '';
+
+    return `
+      <div class="metric-card">
+        <div class="metric-value">${escHtml(String(value))}</div>
+        <div class="metric-label">${escHtml(m.label)}</div>
+        ${trendHtml}
+        ${updated}
+      </div>`;
+  }).join('');
+
+  bar.innerHTML = `
+    <div class="performance-header">
+      <span class="section-label" style="margin:0">Performance</span>
+      <button class="btn-refresh-metrics" onclick="fetchSheetMetrics()" title="Refresh">↻ Refresh</button>
+    </div>
+    <div class="metric-cards">${cards}</div>`;
+}
+
+function renderMetricsLoading() {
+  const bar = document.getElementById('performance-bar');
+  if (!bar) return;
+  bar.classList.remove('hidden');
+  const cards = (settings.metrics || []).map(() =>
+    `<div class="metric-card metric-loading">
+      <div class="metric-value">…</div>
+      <div class="metric-label">Loading</div>
+    </div>`
+  ).join('');
+  bar.innerHTML = `
+    <div class="performance-header">
+      <span class="section-label" style="margin:0">Performance</span>
+    </div>
+    <div class="metric-cards">${cards}</div>`;
+}
+
+function renderMetricsError() {
+  const bar = document.getElementById('performance-bar');
+  if (!bar) return;
+  bar.innerHTML += `<p class="metrics-error">Could not load Sheet data. Check that Google Sheets API is enabled in your Cloud project.</p>`;
+}
+
+function formatRelativeTime(date) {
+  const mins = Math.floor((Date.now() - new Date(date)) / 60000);
+  if (mins < 1)  return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  return `${Math.floor(mins / 60)}h ago`;
 }
 
 // ============================================================
@@ -680,8 +812,13 @@ function init() {
   updateClock();
   setInterval(updateClock, 30000);
 
-  // Auto-refresh meetings every 5 min if connected
-  setInterval(() => { if (accessToken) fetchMeetings(); }, 300000);
+  // Auto-refresh meetings + metrics every 5 min if connected
+  setInterval(() => {
+    if (accessToken) {
+      fetchMeetings();
+      fetchSheetMetrics();
+    }
+  }, 300000);
 
   renderCategoryTabs();
   renderResources();
