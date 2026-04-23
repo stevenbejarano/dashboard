@@ -107,8 +107,10 @@ function updateClock() {
 }
 
 // ============================================================
-// GOOGLE AUTH — auto-connects silently on every page load
+// GOOGLE AUTH
 // ============================================================
+
+const SCOPES = 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/spreadsheets.readonly';
 
 let _gapiReady = false;
 let _gisReady  = false;
@@ -123,29 +125,34 @@ function gapiLoaded() {
       ]
     });
     _gapiReady = true;
-    maybeAutoConnect();
+    initTokenClientIfReady();
   });
 }
 
 // Called by onload on the GIS script tag
 function gisLoaded() {
   _gisReady = true;
-  maybeAutoConnect();
+  initTokenClientIfReady();
 }
 
-// Silently reconnects if Client ID is configured — no button click needed
-function maybeAutoConnect() {
+// Set up the token client once both libraries are ready
+function initTokenClientIfReady() {
   if (!_gapiReady || !_gisReady || !settings.googleClientId) return;
 
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: settings.googleClientId,
-    scope: 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/spreadsheets.readonly',
+    scope: SCOPES,
     callback: onAuthSuccess,
-    error_callback: () => { /* silent fail — leave Connect button visible */ }
+    error_callback: (err) => {
+      // Silent auth failed — user needs to click Connect
+      console.log('Silent auth unavailable:', err?.type);
+    }
   });
 
-  // prompt:'' = silent if already authorized, popup only on first use
-  tokenClient.requestAccessToken({ prompt: '' });
+  // prompt:'none' = fully silent, no popup, no browser block.
+  // Succeeds only if the user has an active Google session for this app.
+  // If it fails, the Connect button stays visible for the user to click once.
+  tokenClient.requestAccessToken({ prompt: 'none' });
 }
 
 function onAuthSuccess(tokenResponse) {
@@ -160,22 +167,26 @@ function onAuthSuccess(tokenResponse) {
 
   Promise.all([fetchMeetings(), fetchSheetMetrics()]);
 
-  // Silently refresh the token 5 minutes before it expires (tokens last ~1 hour)
-  const expiresIn = (tokenResponse.expires_in || 3600) - 300;
-  setTimeout(() => { if (tokenClient) tokenClient.requestAccessToken({ prompt: '' }); }, expiresIn * 1000);
+  // Auto-refresh token 5 min before expiry (tokens last ~1 hour)
+  const refreshIn = ((tokenResponse.expires_in || 3600) - 300) * 1000;
+  setTimeout(() => {
+    if (tokenClient) tokenClient.requestAccessToken({ prompt: 'none' });
+  }, refreshIn);
 }
 
-// Manual connect button — only needed if silent auth fails (first-time setup)
+// Connect button — user-triggered so browser allows the popup
 function connectCalendar() {
   if (!settings.googleClientId) {
     openSettings();
+    alert('Enter your Google Client ID in Settings first.');
     return;
   }
   if (!tokenClient) {
-    alert('Google APIs are still loading — please try again in a moment.');
+    alert('Still loading — please try again in a moment.');
     return;
   }
-  tokenClient.requestAccessToken({ prompt: '' });
+  // User gesture = browser allows popup; select_account lets them pick their account
+  tokenClient.requestAccessToken({ prompt: 'select_account' });
 }
 
 async function fetchMeetings() {
