@@ -12,6 +12,7 @@ const SHEET_ID = '17felUngAmt-TYcnrKfjKME3vftwi67hqVt1NJPwas4U';
 
 const DEFAULT_SETTINGS = {
   googleClientId: '',
+  currentCol: '',   // Column letter for this week's data, e.g. "I", "J", "K"
   meetingFilters: [
     'DoorDash Onboarding Support',
     'Same Day Onboarding Scheduler'
@@ -257,30 +258,51 @@ function toggleFiltered() {
 // GOOGLE SHEETS — PERFORMANCE METRICS
 // ============================================================
 
+// Convert column letter(s) to a 1-based number and back
+function colToNum(col) {
+  return col.toUpperCase().split('').reduce((n, c) => n * 26 + c.charCodeAt(0) - 64, 0);
+}
+function numToCol(n) {
+  let s = '';
+  while (n > 0) { s = String.fromCharCode(((n - 1) % 26) + 65) + s; n = Math.floor((n - 1) / 26); }
+  return s;
+}
+function prevColumn(col) {
+  const n = colToNum(col);
+  return n > 1 ? numToCol(n - 1) : null;
+}
+
 async function fetchSheetMetrics() {
   const metrics = settings.metrics || [];
+  const col = (settings.currentCol || '').replace(/[^a-zA-Z]/g, '').toUpperCase();
+
   if (!metrics.length) return;
+
+  if (!col) {
+    renderMetricsNeedColumn();
+    return;
+  }
 
   renderMetricsLoading();
 
-  const ranges = metrics.map(m =>
-    `'${m.tab}'!${m.startCol}${m.row}:${m.endCol}${m.row}`
-  );
+  const prev = prevColumn(col);
+
+  // Build one range per metric for current week, plus one for previous week (trend)
+  const currRanges = metrics.map(m => `'${m.tab}'!${col}${m.row}`);
+  const prevRanges = prev ? metrics.map(m => `'${m.tab}'!${prev}${m.row}`) : [];
+  const allRanges  = [...currRanges, ...prevRanges];
 
   try {
     const res = await gapi.client.sheets.spreadsheets.values.batchGet({
       spreadsheetId: SHEET_ID,
-      ranges
+      ranges: allRanges,
+      valueRenderOption: 'FORMATTED_VALUE'   // get "34.4%" not "0.344"
     });
 
-    const valueRanges = res.result.valueRanges || [];
-    valueRanges.forEach((vr, i) => {
-      const m = metrics[i];
-      const row = vr.values?.[0] || [];
-      // Filter to non-empty cells
-      const filled = row.filter(v => v !== '' && v != null);
-      const current  = filled[filled.length - 1]  ?? '—';
-      const previous = filled[filled.length - 2]  ?? null;
+    const vrs = res.result.valueRanges || [];
+    metrics.forEach((m, i) => {
+      const current  = vrs[i]?.values?.[0]?.[0] ?? '—';
+      const previous = prev ? (vrs[metrics.length + i]?.values?.[0]?.[0] ?? null) : null;
       metricValues[m.id] = { current, previous, updatedAt: new Date() };
     });
 
@@ -289,6 +311,19 @@ async function fetchSheetMetrics() {
     console.error('Sheets fetch failed', e);
     renderMetricsError();
   }
+}
+
+function renderMetricsNeedColumn() {
+  const bar = document.getElementById('performance-bar');
+  if (!bar) return;
+  bar.classList.remove('hidden');
+  bar.innerHTML = `
+    <div class="performance-header">
+      <span class="section-label" style="margin:0">Performance</span>
+    </div>
+    <div class="metrics-setup-prompt">
+      Set this week's column in <button class="btn-inline-link" onclick="openSettings()">⚙ Settings → Current Week Column</button> to load your metrics.
+    </div>`;
 }
 
 function findTrend(current, previous) {
@@ -708,6 +743,7 @@ function deleteResource() {
 
 function openSettings() {
   document.getElementById('setting-client-id').value = settings.googleClientId || '';
+  document.getElementById('setting-current-col').value = settings.currentCol || '';
   document.getElementById('setting-merchant-day').value = settings.wbr.merchant.dayOfWeek ?? 1;
   document.getElementById('setting-iops-day').value = settings.wbr.iops.dayOfWeek ?? 3;
   renderFilterTags();
@@ -758,7 +794,8 @@ function removeCat(i) {
 }
 
 function saveSettings() {
-  settings.googleClientId      = document.getElementById('setting-client-id').value.trim();
+  settings.googleClientId         = document.getElementById('setting-client-id').value.trim();
+  settings.currentCol             = document.getElementById('setting-current-col').value.replace(/[^a-zA-Z]/g, '').toUpperCase();
   settings.wbr.merchant.dayOfWeek = parseInt(document.getElementById('setting-merchant-day').value);
   settings.wbr.iops.dayOfWeek     = parseInt(document.getElementById('setting-iops-day').value);
   save();
@@ -767,6 +804,9 @@ function saveSettings() {
   renderResources();
   renderWBR();
   renderMeetings();
+  // Re-fetch metrics with updated column
+  if (accessToken) fetchSheetMetrics();
+  else renderMetricsNeedColumn();
 }
 
 // ============================================================

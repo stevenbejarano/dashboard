@@ -961,6 +961,23 @@ a:hover { text-decoration: underline; }
   margin-top: 8px;
 }
 
+.metrics-setup-prompt {
+  font-size: 13px;
+  color: var(--text-muted);
+  padding: 12px 0;
+}
+
+.btn-inline-link {
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  font-weight: 500;
+}
+.btn-inline-link:hover { text-decoration: underline; }
+
 /* ================================
    RESPONSIVE
 ================================ */
