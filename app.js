@@ -63,11 +63,12 @@ function loadJSON(key, fallback) {
     const raw = localStorage.getItem(key);
     if (!raw) return deepClone(fallback);
     const parsed = JSON.parse(raw);
+    // Arrays must be returned as-is — deepMerge would corrupt them into plain objects
+    if (Array.isArray(fallback)) return Array.isArray(parsed) ? parsed : deepClone(fallback);
     if (typeof parsed !== 'object' || parsed === null) return deepClone(fallback);
-    // Deep merge: fallback fills in any missing nested keys
     return deepMerge(deepClone(fallback), parsed);
   } catch {
-    localStorage.removeItem(key); // clear corrupt data
+    localStorage.removeItem(key);
     return deepClone(fallback);
   }
 }
