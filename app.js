@@ -866,6 +866,20 @@ function saveSettings() {
 }
 
 // ============================================================
+// SIGMA EMBED
+// ============================================================
+
+function sigmaLoaded() {
+  // iframe loaded — Sigma may still be blocking silently (blank frame)
+  // Nothing to do; if it renders, great
+}
+
+function sigmaBlocked() {
+  document.getElementById('sigma-iframe').classList.add('hidden');
+  document.getElementById('sigma-blocked').classList.remove('hidden');
+}
+
+// ============================================================
 // MODAL HELPERS
 // ============================================================
 
