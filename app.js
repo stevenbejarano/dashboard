@@ -36,7 +36,58 @@ const DEFAULT_SETTINGS = {
   ]
 };
 
-const DEFAULT_RESOURCES = [];
+const DEFAULT_RESOURCES = [
+  {id:'r1',title:'MOE QUEUE',url:'https://doordash.atlassian.net/jira/servicedesk/projects/MSSD/queues/custom/12782',category:'Volume Tracking',tags:['jira','queue','mssd'],days:[],calKeywords:'',clickCount:0},
+  {id:'r2',title:'IOSD',url:'https://doordash.atlassian.net/jira/servicedesk/projects/IOSD/queues/custom/4437',category:'Volume Tracking',tags:['jira','queue','iosd'],days:[],calKeywords:'',clickCount:0},
+  {id:'r3',title:'Golden Backlog',url:'https://figment.lightning.force.com/lightning/r/Report/00OKd000003ujBkMAI/view?0.source=aloha',category:'Volume Tracking',tags:['backlog','golden'],days:[],calKeywords:'',clickCount:0},
+  {id:'r4',title:'Silver Backlog',url:'https://figment.lightning.force.com/lightning/r/Report/00OKd000003nycgMAA/view?0.source=aloha',category:'Volume Tracking',tags:['backlog','silver'],days:[],calKeywords:'',clickCount:0},
+  {id:'r5',title:'Golden POS Support',url:'https://figment.lightning.force.com/lightning/r/Report/00OKd000003ujBkMAI/view?queryScope=userFolders',category:'Volume Tracking',tags:['pos','golden'],days:[],calKeywords:'',clickCount:0},
+  {id:'r6',title:'Response Receive',url:'https://doordashmx.lightning.force.com/lightning/o/WorkPlan/list?filterName=Silver_Px_Response_Received',category:'Volume Tracking',tags:['salesforce','silver'],days:[],calKeywords:'',clickCount:0},
+  {id:'r7',title:'POS Escalations',url:'https://doordashmx.lightning.force.com/lightning/o/WorkPlan/list?filterName=Silver_POS_escalations',category:'Volume Tracking',tags:['pos','escalations'],days:[],calKeywords:'',clickCount:0},
+  {id:'r8',title:'BAT',url:'https://unity.doordash.com/suites/merchant/marketplace-admin/activations/ssio',category:'Volume Tracking',tags:['unity','activations'],days:[],calKeywords:'',clickCount:0},
+  {id:'r9',title:'DDXSalesforce',url:'https://doordashmx.lightning.force.com/lightning/o/WorkPlan/list?filterName=IO_Team_Email_Response_Received_Golden',category:'Volume Tracking',tags:['salesforce','golden'],days:[],calKeywords:'',clickCount:0},
+  {id:'r10',title:'TEAM Huddle',url:'https://docs.google.com/document/d/17er1Eh-MG6jdWzBXu-dcNoiut1-bW4JU_5Mud-cRZhU/edit',category:'Meeting Agendas',tags:['huddle','team'],days:[1,2,3,4,5],calKeywords:'Huddle',clickCount:0},
+  {id:'r11',title:'O and E Weekly Huddle',url:'https://docs.google.com/document/d/17er1Eh-MG6jdWzBXu-dcNoiut1-bW4JU_5Mud-cRZhU/edit?tab=t.vn19nuepkb1a',category:'Meeting Agendas',tags:['huddle','weekly'],days:[],calKeywords:'O&E',clickCount:0},
+  {id:'r12',title:'Pre-Live Leads Sync',url:'https://docs.google.com/document/d/1ySkQhk9jrYB8JXYrl6Q6tSreWSWgy9QXgR6ZgZripns/edit',category:'Meeting Agendas',tags:['leads','sync'],days:[1,3],calKeywords:'Pre-Live Leads',clickCount:0},
+  {id:'r13',title:'Vibe Check Weekly',url:'https://docs.google.com/document/d/1Cup8oHLyXkN42r34-LzUeuQ889bXufiGtLzkL9cwJug/edit',category:'Meeting Agendas',tags:['vibe','weekly'],days:[],calKeywords:'Vibe Check',clickCount:0},
+  {id:'r14',title:'2026 Task Schedule Rx Mkt Integrations',url:'https://docs.google.com/spreadsheets/d/1dgDPKusvaCc1lwRjvbHj1qyOQvflsT8boKKwzPtLj-A/edit',category:'Team Docs',tags:['task','schedule'],days:[],calKeywords:'',clickCount:0},
+  {id:'r15',title:'Attendance Occurrence Tracker',url:'https://docs.google.com/spreadsheets/d/1sd4jPV6oHg9d4wfMMyjRUfVLjCMlKgznT_J6_k40jjo/edit',category:'Team Docs',tags:['attendance','tracker'],days:[],calKeywords:'',clickCount:0},
+  {id:'r16',title:'Competencies and Responsibilities Framework',url:'https://docs.google.com/spreadsheets/d/1OArfmSpa_rr_aH6771SECyl7-WSQlTBqnBfiaOR_O9A/edit',category:'Team Docs',tags:['competencies','framework'],days:[],calKeywords:'',clickCount:0},
+  {id:'r17',title:'I.Ops TL Weekly Notes',url:'https://docs.google.com/document/d/1pcXANo__iO4x9oVqMiL2aPcWn9kPFw0aoCrzh9yd9h8/edit',category:'Team Docs',tags:['tl','notes','weekly'],days:[1,2,3,4,5],calKeywords:'',clickCount:0},
+  {id:'r18',title:'Values 2.0',url:'https://docs.google.com/spreadsheets/d/1qtv6gCegnnq9xJfe6w6BBAOiIjOUrv45ppxzzeGjs58/edit',category:'Team Docs',tags:['values'],days:[],calKeywords:'',clickCount:0},
+  {id:'r19',title:'I.Ops Jira Board',url:'https://doordash.atlassian.net/jira/core/projects/IOMXS/board',category:'Team Docs',tags:['jira','board'],days:[],calKeywords:'',clickCount:0},
+  {id:'r20',title:'I.Ops Reporting by Kohlforce',url:'https://doordash.atlassian.net/jira/dashboards/31198',category:'Team Docs',tags:['jira','reporting'],days:[],calKeywords:'',clickCount:0},
+  {id:'r21',title:'Integration Ops Confluence',url:'https://doordash.atlassian.net/wiki/spaces/INTEGRATIO/overview',category:'Team Docs',tags:['confluence','integration'],days:[],calKeywords:'',clickCount:0},
+  {id:'r22',title:'Atlassian Wiki Homepage',url:'https://doordash.atlassian.net/wiki/spaces/AT/overview',category:'Team Docs',tags:['confluence','atlassian'],days:[],calKeywords:'',clickCount:0},
+  {id:'r23',title:'Team Figment Tracking View',url:'https://figment.lightning.force.com/lightning/r/Report/00OKd000003oBb3MAE/view?queryScope=userFolders',category:'Team Docs',tags:['figment','tracking'],days:[],calKeywords:'',clickCount:0},
+  {id:'r24',title:'Drive',url:'https://drive.google.com/drive/home',category:'Team Docs',tags:['drive','google'],days:[1,2,3,4,5],calKeywords:'',clickCount:0},
+  {id:'r25',title:'MxOps Workflow Manager',url:'https://app.sigmacomputing.com/doordash/workbook/MxOps-Workflow-Manager-Rx-4XgWfVw4VJgUYETTQpjBhs?:nodeId=5a6zYtDbDU',category:'Team Docs',tags:['sigma','workflow'],days:[],calKeywords:'',clickCount:0},
+  {id:'r26',title:'I.Ops Support Hub Sigma',url:'https://app.sigmacomputing.com/doordash/workbook/I-Ops-Support-Hub-2d1XT4htLSnxVB9fdXGKHL',category:'Team Docs',tags:['sigma','support'],days:[1,2,3,4,5],calKeywords:'',clickCount:0},
+  {id:'r27',title:'Onboarding Dashboard Sigma',url:'https://app.sigmacomputing.com/doordash/workbook/Onboarding-Dashboard-4bVAz7o1wyUdG4mmJIg2KF?:nodeId=I4eD-KHa8d',category:'Team Docs',tags:['sigma','onboarding'],days:[],calKeywords:'',clickCount:0},
+  {id:'r28',title:'CHIP I.Ops Glean',url:'https://app.glean.com/chat/agents/0f153216ecab4c5682cca77e4f362643',category:'Team Docs',tags:['chip','glean'],days:[1,2,3,4,5],calKeywords:'',clickCount:0},
+  {id:'r29',title:'DDU LMS',url:'https://doordash.csod.com/phnx/driver.aspx?routename=Learning/Curriculum/CurriculumPlayer&TargetUser=88763&curriculumLoId=4e3611c3-8acb-4f4e-9326-ddf39c544b51',category:'Team Docs',tags:['lms','training'],days:[],calKeywords:'',clickCount:0},
+  {id:'r30',title:'2025 MxOps Pre-Live Task Schedule',url:'https://docs.google.com/spreadsheets/d/1c2yoklvAvR8grr38GMU01kMs2fhn7eTZ7YM2n7iAIvs/edit',category:'Performance Tracking',tags:['pre-live','schedule'],days:[],calKeywords:'',clickCount:0},
+  {id:'r31',title:'Golden Churn Sheet',url:'https://docs.google.com/spreadsheets/d/1l6werqQPvyf0vceE-d13-PJRc_9fbajWt6b1mnnwFNE/edit',category:'Performance Tracking',tags:['churn','golden'],days:[],calKeywords:'',clickCount:0},
+  {id:'r32',title:'Silver Churn Sheet',url:'https://docs.google.com/spreadsheets/d/16tDc92VKLkGq1nkuoaVTIyVWPDgghv8pTlx7k8rHAPU/edit',category:'Performance Tracking',tags:['churn','silver'],days:[],calKeywords:'',clickCount:0},
+  {id:'r33',title:'Q2 2025 Onboarding KR Scorecard',url:'https://docs.google.com/spreadsheets/d/1vXSlms2szaxtAkwlcNDcoG9pmtIhm6T1RSdEsETJOiI/edit',category:'Performance Tracking',tags:['kr','scorecard'],days:[],calKeywords:'',clickCount:0},
+  {id:'r34',title:'2026 Onboarding KR Scorecard',url:'https://docs.google.com/spreadsheets/d/17felUngAmt-TYcnrKfjKME3vftwi67hqVt1NJPwas4U/edit',category:'Performance Tracking',tags:['kr','scorecard','2026'],days:[1,2,3,4,5],calKeywords:'WBR',clickCount:0},
+  {id:'r35',title:'Integrations Onboarding and Support Master Tracker',url:'https://docs.google.com/spreadsheets/d/1ZYHHij8TMFyFYw4zakdLGZeR1UuxnwzSWuM0RtgoN0w/edit',category:'Performance Tracking',tags:['tracker','master'],days:[],calKeywords:'',clickCount:0},
+  {id:'r36',title:'Integrations Onboarding QA Dashboard',url:'https://docs.google.com/spreadsheets/d/1at6dGenB8QXrHp1YQcdCe3aHAYScrsylHJXDXhvk58I/edit',category:'Performance Tracking',tags:['qa','dashboard'],days:[],calKeywords:'',clickCount:0},
+  {id:'r37',title:'CHIP Usage Tracking',url:'https://docs.google.com/spreadsheets/d/1NF9BG5d68nZOM5YXnsf-ES8WG11zoWlEaGl0-Ku0Ljk/edit',category:'Performance Tracking',tags:['chip','tracking'],days:[],calKeywords:'',clickCount:0},
+  {id:'r38',title:'SDO and Operator Tooling Tracker',url:'https://docs.google.com/spreadsheets/d/1mFeNiWDouzAsa023CgQGPGn5cUyB6BAdDD032wugJp0/edit',category:'Performance Tracking',tags:['sdo','tracker'],days:[],calKeywords:'',clickCount:0},
+  {id:'r39',title:'Kohls Query Sandbox',url:'https://app.mode.com/editor/doordash/reports/dc6bc333f07c/queries/0b42f1cadfd3',category:'Performance Tracking',tags:['mode','query'],days:[],calKeywords:'',clickCount:0},
+  {id:'r40',title:'Integrations Matrix Sigma',url:'https://app.sigmacomputing.com/doordash/workbook/Integrations-Matrix-3SymdkxACGahbSRa73OzEd?:nodeId=TF85f1RiDv',category:'Performance Tracking',tags:['sigma','matrix'],days:[],calKeywords:'',clickCount:0},
+  {id:'r41',title:'Figment Case Queue',url:'https://figment.lightning.force.com/lightning/o/Case/list?filterName=00BKd00000CKHUXMA5',category:'Performance Tracking',tags:['figment','cases'],days:[1,2,3,4,5],calKeywords:'',clickCount:0},
+  {id:'r42',title:'Integrations Onboarding QA Form',url:'https://docs.google.com/spreadsheets/d/1m8Ir4uOQUl5_fWGcNWi9YrWqFs8R_76yY-6I0-VrVKg/edit',category:'Resources and Process Docs',tags:['qa','form'],days:[],calKeywords:'',clickCount:0},
+  {id:'r43',title:'MXO I.OPS Support Playbook',url:'https://docs.google.com/document/d/1PVgLRsL_e7qpcdDCJ_9dGBT4KZ9fQWNg_Q7Jlcqf77Q/edit',category:'Resources and Process Docs',tags:['playbook','support'],days:[],calKeywords:'',clickCount:0},
+  {id:'r44',title:'HQRR High Quality Resolution Rate',url:'https://gamma.app/docs/HQRR-High-Quality-Resolution-Rate-kp1zn0xo7fx4rbb?mode=doc',category:'Resources and Process Docs',tags:['hqrr','resolution'],days:[],calKeywords:'',clickCount:0},
+  {id:'r45',title:'New Hire Training Schedule',url:'https://docs.google.com/spreadsheets/d/17SeEOMS2b-eExQ0R4nqCG9tR2fuf0aMOEhHXpcrhqWo/edit',category:'Resources and Process Docs',tags:['training'],days:[],calKeywords:'',clickCount:0},
+  {id:'r46',title:'Square V1 to V2 Migration Agent Guide',url:'https://docs.google.com/document/d/1RApaTBEbFD4F6mRcvmmw3DHMIN_qCCTx8I7bsnhCE64/edit',category:'Resources and Process Docs',tags:['square','migration'],days:[],calKeywords:'',clickCount:0},
+  {id:'r47',title:'IO Rescue Phone Etiquette',url:'https://docs.google.com/presentation/d/1xyYT5vxgSZ2FwZJn74euOs7Hjl0oGcd8VBB8htjq16I/edit',category:'Resources and Process Docs',tags:['phone','etiquette'],days:[],calKeywords:'',clickCount:0},
+  {id:'r48',title:'Performance Rating Definitions',url:'https://docs.google.com/document/d/1dCCkLE9_SiQxTM1enVgkEcqgrfuMnnSNSq2_o9DVHhM/edit',category:'Resources and Process Docs',tags:['performance','rating'],days:[],calKeywords:'',clickCount:0},
+  {id:'r49',title:'Access Management Permissions',url:'https://unity.doordash.com/suites/admin/access-management/apps',category:'Resources and Process Docs',tags:['access','permissions'],days:[],calKeywords:'',clickCount:0},
+  {id:'r50',title:'MultiLOC Deintegration Guide',url:'https://docs.google.com/document/d/1PVgLRsL_e7qpcdDCJ_9dGBT4KZ9fQWNg_Q7Jlcqf77Q/edit?tab=t.v3sen567ts46',category:'Resources and Process Docs',tags:['multiloc','deintegration'],days:[],calKeywords:'',clickCount:0}
+];
 
 // ============================================================
 // STATE
@@ -546,7 +597,7 @@ function renderResources() {
   if (activeCategory !== 'all') subset = subset.filter(r => r.category === activeCategory);
   if (query) subset = subset.filter(r =>
     r.title.toLowerCase().includes(query) ||
-    r.tags?.some(t => t.toLowerCase().includes(query)) ||
+    parseTags(r.tags).some(t => t.toLowerCase().includes(query)) ||
     r.category?.toLowerCase().includes(query)
   );
 
@@ -563,7 +614,7 @@ function renderResources() {
 
   grid.innerHTML = ranked.map(r => {
     const catIdx = getCategoryIndex(r.category);
-    const tags   = (r.tags || []).slice(0, 3).map(t => `<span class="resource-tag">${escHtml(t)}</span>`).join('');
+    const tags   = parseTags(r.tags).slice(0, 3).map(t => `<span class="resource-tag">${escHtml(t)}</span>`).join('');
     return `
       <a class="resource-card" href="${escAttr(r.url)}" target="_blank" onclick="trackClick('${r.id}')">
         <div class="resource-card-header">
@@ -723,7 +774,7 @@ function editResource(e, id) {
   document.getElementById('resource-id').value = r.id;
   document.getElementById('resource-title').value = r.title;
   document.getElementById('resource-url').value = r.url;
-  document.getElementById('resource-tags').value = (r.tags || []).join(', ');
+  document.getElementById('resource-tags').value = parseTags(r.tags).join(', ');
   document.getElementById('resource-cal-keywords').value = (r.calendarKeywords || []).join(', ');
   document.getElementById('btn-delete-resource').classList.remove('hidden');
 
@@ -903,6 +954,12 @@ function handleOverlayClick(e) {
 // ============================================================
 // UTILS
 // ============================================================
+
+function parseTags(tags) {
+  if (Array.isArray(tags)) return tags;
+  if (typeof tags === 'string' && tags.trim()) return tags.split(',').map(t => t.trim()).filter(Boolean);
+  return [];
+}
 
 function escHtml(str) {
   return String(str ?? '')
