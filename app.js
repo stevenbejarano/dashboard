@@ -21,7 +21,8 @@ const DEFAULT_SETTINGS = {
     'Team Docs',
     'Performance Tracking',
     'Meeting Agendas',
-    'Resources and Process Docs'
+    'Resources and Process Docs',
+    'Volume Tracking'
   ],
   wbr: {
     merchant: { dayOfWeek: 1 },   // Monday — change in Settings
