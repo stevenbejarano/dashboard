@@ -9,6 +9,16 @@
 // ============================================================
 
 const SHEET_ID     = '17felUngAmt-TYcnrKfjKME3vftwi67hqVt1NJPwas4U';
+
+// Update these each quarter
+const WBR_CONFIG = {
+  authors:      'Stephanie Jimenez  Steven Bejarano',
+  sdrQ1Exit:   '33.3%',
+  sdrQTDPlan:  '41%',
+  ad30Q1Exit:  '69.9%',
+  ad30QTDPlan: '69%',
+  ad30Goal:    '69%'
+};
 const SDO_SHEET_ID = '1Li_WeRTBzItubNghkrX5VLGuuHc4E99hW1qCYI-oarY';
 const SDO_TAB      = 'SDO Log';
 
@@ -651,6 +661,114 @@ function renderSDOWidget() {
     </div>` : ''}`;
 }
 
+// ============================================================
+// WBR DRAFT GENERATOR
+// ============================================================
+
+function generateWBRDraft() {
+  const sdrVal  = metricValues['same_day_ready'];
+  const ad30Val = metricValues['active_day30'];
+  const sdr     = sdrVal?.current  ?? null;
+  const sdrPrev = sdrVal?.previous ?? null;
+  const ad30    = ad30Val?.current ?? null;
+
+  // WoW change
+  const toNum  = v => v ? parseFloat(String(v).replace(/[%,]/g, '')) : null;
+  const sdrNum = toNum(sdr);
+  const preNum = toNum(sdrPrev);
+  const diff   = sdrNum !== null && preNum !== null && !isNaN(sdrNum) && !isNaN(preNum)
+    ? sdrNum - preNum : null;
+  const wowLabel = diff !== null
+    ? `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}pp`
+    : '[WoW change]';
+  const wowInline = diff !== null ? ` ${wowLabel} WoW` : '';
+
+  // Trend word for TLDR
+  const trend = diff === null ? 'holding steady'
+    : diff >  0.5 ? 'improving'
+    : diff < -0.5 ? 'under pressure'
+    : 'holding steady';
+
+  // SDO last-week data
+  const sdo       = computeSDOMetrics(sdoAllRows, 'last-week');
+  const hasSDO    = sdo.scheduled > 0;
+  const noShowRisk = sdo.canceled > 0
+    ? ` This was primarily driven by ${sdo.canceled} Mx no-shows in SDO.`
+    : '';
+
+  const sdrDisplay  = sdr  ? String(sdr)  : '[SDR%]';
+  const ad30Display = ad30 ? String(ad30) : '[AD30%]';
+
+  const draft =
+`INTEGRATIONS ONBOARDING  ${WBR_CONFIG.authors}
+TLDR: Performance is ${trend} with Same Day Readiness at ${sdrDisplay}${wowInline} and Active by Day 30 at ${ad30Display}${hasSDO ? `. SDO saw ${sdo.scheduled} bookings with ${sdo.activated} activations (${sdo.rate}% activation rate)` : ''}.
+Risks: None at this time
+
+North Star OKR	Q1 Exit	QTD Plan	This Week	WoW Change
+% Mx Setup Same Day	${WBR_CONFIG.sdrQ1Exit}	${WBR_CONFIG.sdrQTDPlan}	${sdrDisplay}	${wowLabel}
+
+Team OKR	Q1 Exit	QTD Plan	QTD Actual	Q2 Goal
+% Active by Day 30	${WBR_CONFIG.ad30Q1Exit}	${WBR_CONFIG.ad30QTDPlan}	${ad30Display}	${WBR_CONFIG.ad30Goal}
+
+
+Pacing
+Same Day Readiness, Active by Day 30 Updates:
+TL;DR - This week onboarding landed at ${sdrDisplay}${wowInline} and ${ad30Display} Active by Day 30.${noShowRisk}
+Impact/Risk - [Add impact/risk narrative]
+Next Steps - [Add next steps]
+
+Top Things to Know
+${hasSDO ? `SDO Volume: ${sdo.scheduled} bookings scheduled last week; ${sdo.activated} were same-day ready (${sdo.rate}%), and ${sdo.canceled} no-shows.` : 'SDO Volume: [bookings] scheduled — connect calendar to load live data.'}
+[Add additional key point]
+[Add additional key point]`;
+
+  const saved = localStorage.getItem('wbr_commentary_draft');
+  const body  = document.getElementById('wbr-draft-body');
+  body.innerHTML = `
+    <textarea
+      id="wbr-commentary-text"
+      class="wbr-commentary-textarea"
+      oninput="localStorage.setItem('wbr_commentary_draft', this.value)"
+    >${escHtml(draft)}</textarea>
+    <div class="wbr-draft-actions">
+      <button class="btn btn-ghost btn-sm" onclick="clearWBRDraft()">Clear</button>
+      <button id="wbr-copy-btn" class="btn btn-primary btn-sm" onclick="copyWBRDraft()">Copy Commentary</button>
+    </div>`;
+}
+
+function loadSavedWBRDraft() {
+  const saved = localStorage.getItem('wbr_commentary_draft');
+  if (!saved) return;
+  const body = document.getElementById('wbr-draft-body');
+  body.innerHTML = `
+    <textarea
+      id="wbr-commentary-text"
+      class="wbr-commentary-textarea"
+      oninput="localStorage.setItem('wbr_commentary_draft', this.value)"
+    >${escHtml(saved)}</textarea>
+    <div class="wbr-draft-actions">
+      <button class="btn btn-ghost btn-sm" onclick="clearWBRDraft()">Clear</button>
+      <button id="wbr-copy-btn" class="btn btn-primary btn-sm" onclick="copyWBRDraft()">Copy Commentary</button>
+    </div>`;
+}
+
+function copyWBRDraft() {
+  const text = document.getElementById('wbr-commentary-text')?.value || '';
+  if (!text.trim()) return;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('wbr-copy-btn');
+    if (!btn) return;
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = 'Copy Commentary'; }, 2000);
+  });
+}
+
+function clearWBRDraft() {
+  localStorage.removeItem('wbr_commentary_draft');
+  document.getElementById('wbr-draft-body').innerHTML =
+    '<p class="empty-state-hint">Click Generate Draft to build this week\'s commentary from live data.</p>';
+}
+
 function formatRelativeTime(date) {
   const mins = Math.floor((Date.now() - new Date(date)) / 60000);
   if (mins < 1)  return 'just now';
@@ -1029,7 +1147,8 @@ function init() {
   renderCategoryTabs();
   renderResources();
   renderSuggested();
-  renderMetricsNeedColumn(); // Show performance bar immediately; updates after auth + column set
+  renderMetricsNeedColumn();
+  loadSavedWBRDraft(); // Show performance bar immediately; updates after auth + column set
 
   // Keyboard shortcut: Escape to close modal
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
