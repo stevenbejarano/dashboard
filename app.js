@@ -518,6 +518,11 @@ function renderMetricsError() {
 // SDO LOG METRICS
 // ============================================================
 
+let sdoFilter   = 'this-week';  // 'this-week' | 'last-week' | 'last-month'
+let sdoAllRows  = [];           // cached raw rows from last fetch
+
+const SDO_FILTER_LABELS = { 'this-week': 'This Week', 'last-week': 'Last Week', 'last-month': 'Last Month' };
+
 async function fetchSDOMetrics() {
   if (!accessToken) return;
   const el = document.getElementById('sdo-section');
@@ -525,7 +530,7 @@ async function fetchSDOMetrics() {
   el.classList.remove('hidden');
   el.innerHTML = `
     <div class="performance-header">
-      <span class="section-label" style="margin:0">Same Day Onboarding — This Week</span>
+      <span class="section-label" style="margin:0">Same Day Onboarding</span>
     </div>
     <div class="metric-cards">${[1,2,3,4,5].map(() =>
       '<div class="metric-card metric-loading"><div class="metric-value">…</div><div class="metric-label">Loading</div></div>'
@@ -536,7 +541,8 @@ async function fetchSDOMetrics() {
       range: `'${SDO_TAB}'!A2:Y`,
       valueRenderOption: 'FORMATTED_VALUE'
     });
-    sdoMetrics = computeSDOMetrics(res.result.values || []);
+    sdoAllRows = res.result.values || [];
+    sdoMetrics = computeSDOMetrics(sdoAllRows, sdoFilter);
     renderSDOWidget();
   } catch (e) {
     console.error('SDO fetch failed', e);
@@ -544,33 +550,60 @@ async function fetchSDOMetrics() {
   }
 }
 
-function getWeekBounds() {
-  const now = new Date();
-  const day = now.getDay();
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
-  monday.setHours(0, 0, 0, 0);
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-  sunday.setHours(23, 59, 59, 999);
-  return { monday, sunday };
+function setSDOFilter(filter) {
+  sdoFilter = filter;
+  sdoMetrics = computeSDOMetrics(sdoAllRows, sdoFilter);
+  renderSDOWidget();
 }
 
-function computeSDOMetrics(rows) {
-  const { monday, sunday } = getWeekBounds();
-  const thisWeek = rows.filter(row => {
+function getDateBounds(filter) {
+  const now = new Date();
+  const day = now.getDay(); // 0=Sun
+
+  if (filter === 'this-week') {
+    const start = new Date(now);
+    start.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    end.setHours(23, 59, 59, 999);
+    return { start, end };
+  }
+
+  if (filter === 'last-week') {
+    const start = new Date(now);
+    start.setDate(now.getDate() - (day === 0 ? 6 : day - 1) - 7);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    end.setHours(23, 59, 59, 999);
+    return { start, end };
+  }
+
+  if (filter === 'last-month') {
+    const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const end   = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+    return { start, end };
+  }
+
+  return { start: new Date(0), end: new Date() };
+}
+
+function computeSDOMetrics(rows, filter) {
+  const { start, end } = getDateBounds(filter);
+  const subset = rows.filter(row => {
     const d = new Date(row[SDO.DATE] || '');
-    return !isNaN(d) && d >= monday && d <= sunday;
+    return !isNaN(d) && d >= start && d <= end;
   });
 
-  const scheduled    = thisWeek.length;
-  const activated    = thisWeek.filter(r => (r[SDO.READY] || '').toUpperCase() === 'YES').length;
-  const canceled     = thisWeek.filter(r => (r[SDO.ZOOM_NOTES] || '').toLowerCase().includes('cancel')).length;
-  const rescheduled  = thisWeek.filter(r => (r[SDO.RESCHEDULED] || '').toUpperCase() === 'YES').length;
-  const rate         = scheduled > 0 ? Math.round((activated / scheduled) * 100) : 0;
+  const scheduled   = subset.length;
+  const activated   = subset.filter(r => (r[SDO.READY] || '').toUpperCase() === 'YES').length;
+  const canceled    = subset.filter(r => (r[SDO.ZOOM_NOTES] || '').toLowerCase().includes('cancel')).length;
+  const rescheduled = subset.filter(r => (r[SDO.RESCHEDULED] || '').toUpperCase() === 'YES').length;
+  const rate        = scheduled > 0 ? Math.round((activated / scheduled) * 100) : 0;
 
   const agentMap = {};
-  thisWeek.forEach(r => {
+  subset.forEach(r => {
     const name = (r[SDO.AGENT] || 'Unknown').trim();
     if (!agentMap[name]) agentMap[name] = { scheduled: 0, activated: 0, canceled: 0 };
     agentMap[name].scheduled++;
@@ -590,6 +623,10 @@ function renderSDOWidget() {
   if (!el || !sdoMetrics) return;
   const { scheduled, activated, canceled, rescheduled, rate, agents } = sdoMetrics;
 
+  const filterBtns = Object.entries(SDO_FILTER_LABELS).map(([key, label]) =>
+    `<button class="tab-btn${sdoFilter === key ? ' active' : ''}" onclick="setSDOFilter('${key}')">${label}</button>`
+  ).join('');
+
   const agentRows = agents.map(a => `
     <tr>
       <td>${escHtml(a.name)}</td>
@@ -601,8 +638,11 @@ function renderSDOWidget() {
 
   el.innerHTML = `
     <div class="performance-header">
-      <span class="section-label" style="margin:0">Same Day Onboarding — This Week</span>
-      <button class="btn-refresh-metrics" onclick="fetchSDOMetrics()" title="Refresh">&#8635; Refresh</button>
+      <span class="section-label" style="margin:0">Same Day Onboarding</span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="sdo-filter-tabs">${filterBtns}</div>
+        <button class="btn-refresh-metrics" onclick="fetchSDOMetrics()" title="Refresh">&#8635;</button>
+      </div>
     </div>
     <div class="metric-cards">
       <div class="metric-card"><div class="metric-value">${scheduled}</div><div class="metric-label">Scheduled</div></div>

@@ -958,6 +958,16 @@ a:hover { text-decoration: underline; }
   padding: 0;
 }
 
+.sdo-filter-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.sdo-filter-tabs .tab-btn {
+  font-size: 12px;
+  padding: 3px 10px;
+}
+
 .sdo-table-wrap {
   margin-top: 12px;
   overflow-x: auto;
