@@ -105,6 +105,7 @@ let settings    = loadJSON('dash_settings', DEFAULT_SETTINGS);
 let resources   = loadJSON('dash_resources', DEFAULT_RESOURCES);
 let collapsed   = loadJSON('dash_collapsed', { meetings: false, resources: false, wbrDraft: false });
 let resourcesExpanded = false;
+let meetingsExpanded  = false;
 let meetings      = [];   // from Google Calendar (runtime only)
 let metricValues  = {};   // { metricId: { current, previous, updatedAt } }
 let sdoMetrics    = null; // computed from SDO Log sheet
@@ -264,6 +265,7 @@ async function fetchMeetings() {
       maxResults: 30
     });
     meetings = res.result.items || [];
+    meetingsExpanded = false; // reset to compact view on fresh load
     renderMeetings();
     renderSuggested();
   } catch (e) {
@@ -321,11 +323,41 @@ function renderMeetings() {
   countBadge.textContent = visible.length || '';
   countBadge.classList.toggle('hidden', !visible.length);
 
-  list.innerHTML = visible.length
-    ? visible.map(m => meetingHTML(m)).join('')
+  // Collapsed view: next 4 upcoming meetings (now or future)
+  const MEET_LIMIT = 4;
+  let toShow = visible;
+  let hiddenCount = 0;
+  if (!meetingsExpanded && visible.length > MEET_LIMIT) {
+    const now = Date.now();
+    // upcoming = happening now or not yet ended
+    const upcoming = visible.filter(m => {
+      const end = m.end?.dateTime ? new Date(m.end.dateTime).getTime() : Infinity;
+      return end >= now;
+    });
+    toShow = upcoming.length ? upcoming.slice(0, MEET_LIMIT) : visible.slice(0, MEET_LIMIT);
+    hiddenCount = visible.length - toShow.length;
+  }
+
+  list.innerHTML = toShow.length
+    ? toShow.map(m => meetingHTML(m)).join('')
     : '<div style="padding:12px 0;color:var(--text-muted);font-size:13px;">No meetings today.</div>';
 
-  if (filtered.length) {
+  // Show-more toggle
+  const existingToggle = document.getElementById('meetings-show-more');
+  if (existingToggle) existingToggle.remove();
+  if (visible.length > MEET_LIMIT) {
+    const btn = document.createElement('button');
+    btn.id = 'meetings-show-more';
+    btn.className = 'btn-show-more';
+    btn.textContent = meetingsExpanded
+      ? 'Show less'
+      : `Show full day (${hiddenCount} more)`;
+    btn.onclick = () => { meetingsExpanded = !meetingsExpanded; renderMeetings(); };
+    list.after(btn);
+  }
+
+  // Filtered (hidden) meetings — only shown when expanded
+  if (filtered.length && meetingsExpanded) {
     filteredToggle.classList.remove('hidden');
     document.getElementById('filtered-label').textContent =
       showFiltered ? `Hide ${filtered.length} filtered meeting${filtered.length > 1 ? 's' : ''}` : `Show ${filtered.length} hidden meeting${filtered.length > 1 ? 's' : ''}`;
@@ -333,6 +365,7 @@ function renderMeetings() {
     filteredList.classList.toggle('hidden', !showFiltered);
   } else {
     filteredToggle.classList.add('hidden');
+    filteredList.classList.add('hidden');
   }
 }
 
