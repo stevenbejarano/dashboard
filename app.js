@@ -103,6 +103,8 @@ const DEFAULT_RESOURCES = [
 
 let settings    = loadJSON('dash_settings', DEFAULT_SETTINGS);
 let resources   = loadJSON('dash_resources', DEFAULT_RESOURCES);
+let collapsed   = loadJSON('dash_collapsed', { meetings: false, resources: false, wbrDraft: false });
+let resourcesExpanded = false;
 let meetings      = [];   // from Google Calendar (runtime only)
 let metricValues  = {};   // { metricId: { current, previous, updatedAt } }
 let sdoMetrics    = null; // computed from SDO Log sheet
@@ -871,7 +873,10 @@ function renderResources() {
   }
   empty.classList.add('hidden');
 
-  grid.innerHTML = ranked.map(r => {
+  const PAGE = 8;
+  const visible = resourcesExpanded ? ranked : ranked.slice(0, PAGE);
+
+  grid.innerHTML = visible.map(r => {
     const catIdx = getCategoryIndex(r.category);
     const tags   = parseTags(r.tags).slice(0, 3).map(t => `<span class="resource-tag">${escHtml(t)}</span>`).join('');
     return `
@@ -887,6 +892,20 @@ function renderResources() {
         ${tags ? `<div class="resource-tags">${tags}</div>` : ''}
       </a>`;
   }).join('');
+
+  // Show more / show less button
+  const existingToggle = document.getElementById('resources-show-more');
+  if (existingToggle) existingToggle.remove();
+  if (ranked.length > PAGE) {
+    const btn = document.createElement('button');
+    btn.id = 'resources-show-more';
+    btn.className = 'btn-show-more';
+    btn.textContent = resourcesExpanded
+      ? 'Show less'
+      : `Show ${ranked.length - PAGE} more…`;
+    btn.onclick = () => { resourcesExpanded = !resourcesExpanded; renderResources(); };
+    grid.after(btn);
+  }
 }
 
 function setCategory(cat) {
@@ -1110,6 +1129,31 @@ function handleOverlayClick(e) {
 // UTILS
 // ============================================================
 
+// ============================================================
+// COLLAPSIBLE PANELS
+// ============================================================
+
+function togglePanel(key) {
+  collapsed[key] = !collapsed[key];
+  localStorage.setItem('dash_collapsed', JSON.stringify(collapsed));
+  applyCollapsed();
+}
+
+function applyCollapsed() {
+  ['meetings', 'resources', 'wbrDraft'].forEach(key => {
+    const el = document.getElementById(`panel-body-${key}`);
+    const btn = document.getElementById(`collapse-btn-${key}`);
+    if (!el) return;
+    if (collapsed[key]) {
+      el.classList.add('panel-collapsed');
+      if (btn) btn.textContent = '▶';
+    } else {
+      el.classList.remove('panel-collapsed');
+      if (btn) btn.textContent = '▼';
+    }
+  });
+}
+
 function parseTags(tags) {
   if (Array.isArray(tags)) return tags;
   if (typeof tags === 'string' && tags.trim()) return tags.split(',').map(t => t.trim()).filter(Boolean);
@@ -1150,6 +1194,7 @@ function init() {
   renderSuggested();
   renderMetricsNeedColumn();
   loadSavedWBRDraft(); // Show performance bar immediately; updates after auth + column set
+  applyCollapsed();
 
   // Keyboard shortcut: Escape to close modal
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });

@@ -39,29 +39,39 @@
       <section class="panel" id="meetings-panel">
         <div class="panel-header">
           <h2>Today's Meetings</h2>
-          <span id="meeting-count" class="count-badge"></span>
+          <div class="panel-header-right">
+            <span id="meeting-count" class="count-badge"></span>
+            <button id="collapse-btn-meetings" class="btn-collapse" onclick="togglePanel('meetings')" title="Collapse">▼</button>
+          </div>
         </div>
-        <div id="calendar-prompt" class="empty-state">
-          <p>Connect Google Calendar to see your meetings.</p>
-          <button class="btn btn-primary" onclick="connectCalendar()">Connect Calendar</button>
+        <div id="panel-body-meetings">
+          <div id="calendar-prompt" class="empty-state">
+            <p>Connect Google Calendar to see your meetings.</p>
+            <button class="btn btn-primary" onclick="connectCalendar()">Connect Calendar</button>
+          </div>
+          <div id="meetings-list" class="hidden"></div>
+          <div id="filtered-toggle" class="filtered-toggle hidden">
+            <button onclick="toggleFiltered()">
+              <span id="filtered-label">Show hidden meetings</span>
+            </button>
+          </div>
+          <div id="filtered-list" class="filtered-list hidden"></div>
         </div>
-        <div id="meetings-list" class="hidden"></div>
-        <div id="filtered-toggle" class="filtered-toggle hidden">
-          <button onclick="toggleFiltered()">
-            <span id="filtered-label">Show hidden meetings</span>
-          </button>
-        </div>
-        <div id="filtered-list" class="filtered-list hidden"></div>
       </section>
 
       <!-- WBR DRAFT -->
       <section class="panel" id="wbr-draft-panel">
         <div class="panel-header">
           <h2>WBR Draft</h2>
-          <button class="btn btn-primary btn-sm" onclick="generateWBRDraft()">Generate Draft</button>
+          <div class="panel-header-right">
+            <button class="btn btn-primary btn-sm" onclick="generateWBRDraft()">Generate Draft</button>
+            <button id="collapse-btn-wbrDraft" class="btn-collapse" onclick="togglePanel('wbrDraft')" title="Collapse">▼</button>
+          </div>
         </div>
-        <div id="wbr-draft-body">
-          <p class="empty-state-hint">Click Generate Draft to build this week's commentary from live data.</p>
+        <div id="panel-body-wbrDraft">
+          <div id="wbr-draft-body">
+            <p class="empty-state-hint">Click Generate Draft to build this week's commentary from live data.</p>
+          </div>
         </div>
       </section>
 
@@ -75,24 +85,27 @@
         <div class="resources-controls">
           <input type="text" id="resource-search" placeholder="Search resources…" oninput="renderResources()">
           <button class="btn btn-primary" onclick="openAddResource()">+ Add</button>
+          <button id="collapse-btn-resources" class="btn-collapse" onclick="togglePanel('resources')" title="Collapse">▼</button>
         </div>
       </div>
 
-      <!-- SUGGESTED -->
-      <div id="suggested-section">
-        <div class="section-label">Suggested Today</div>
-        <div id="suggested-list" class="resource-row"></div>
-      </div>
+      <div id="panel-body-resources">
+        <!-- SUGGESTED -->
+        <div id="suggested-section">
+          <div class="section-label">Suggested Today</div>
+          <div id="suggested-list" class="resource-row"></div>
+        </div>
 
-      <!-- CATEGORY TABS -->
-      <div id="category-tabs" class="category-tabs"></div>
+        <!-- CATEGORY TABS -->
+        <div id="category-tabs" class="category-tabs"></div>
 
-      <!-- RESOURCE GRID -->
-      <div id="resource-grid" class="resource-grid"></div>
+        <!-- RESOURCE GRID -->
+        <div id="resource-grid" class="resource-grid"></div>
 
-      <div id="empty-resources" class="empty-state hidden">
-        <p>No resources yet. Add your first link!</p>
-        <button class="btn btn-primary" onclick="openAddResource()">+ Add Resource</button>
+        <div id="empty-resources" class="empty-state hidden">
+          <p>No resources yet. Add your first link!</p>
+          <button class="btn btn-primary" onclick="openAddResource()">+ Add Resource</button>
+        </div>
       </div>
 
     </section>
@@ -220,6 +233,6 @@
 
   </div>
 
-  <script src="app.js?v=3"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>
