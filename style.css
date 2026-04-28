@@ -946,12 +946,60 @@ a:hover { text-decoration: underline; }
 }
 
 /* ================================
-   PERFORMANCE BAR
+   PERFORMANCE BAR + SDO SECTION
 ================================ */
 #performance-bar {
   margin: 12px 0 16px;
   padding: 0;
 }
+
+#sdo-section {
+  margin: 0 0 20px;
+  padding: 0;
+}
+
+.sdo-table-wrap {
+  margin-top: 12px;
+  overflow-x: auto;
+}
+
+.sdo-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.sdo-table th {
+  text-align: left;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.sdo-table td {
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+
+.sdo-table tr:last-child td { border-bottom: none; }
+.sdo-table td.num { text-align: center; }
+.sdo-table th:not(:first-child) { text-align: center; }
+
+.rate-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.rate-good { background: #d1fae5; color: #065f46; }
+.rate-ok   { background: #fef9c3; color: #713f12; }
+.rate-low  { background: #fee2e2; color: #991b1b; }
 
 .performance-header {
   display: flex;

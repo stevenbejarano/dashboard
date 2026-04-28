@@ -8,7 +8,12 @@
 // DEFAULT CONFIG
 // ============================================================
 
-const SHEET_ID = '17felUngAmt-TYcnrKfjKME3vftwi67hqVt1NJPwas4U';
+const SHEET_ID     = '17felUngAmt-TYcnrKfjKME3vftwi67hqVt1NJPwas4U';
+const SDO_SHEET_ID = '1Li_WeRTBzItubNghkrX5VLGuuHc4E99hW1qCYI-oarY';
+const SDO_TAB      = 'SDO Log';
+
+// SDO Log column indices (0-based)
+const SDO = { READY: 1, AGENT: 4, DATE: 5, RESCHEDULED: 14, ZOOM_NOTES: 17, DURATION: 23 };
 
 const DEFAULT_SETTINGS = {
   googleClientId: '',
@@ -97,6 +102,7 @@ let wbrState    = loadJSON('dash_wbr_state', { merchant: null, iops: null }); //
 let wbrLinks    = loadJSON('dash_wbr_links', { merchant: '', iops: '' });
 let meetings      = [];   // from Google Calendar (runtime only)
 let metricValues  = {};   // { metricId: { current, previous, updatedAt } }
+let sdoMetrics    = null; // computed from SDO Log sheet
 let activeCategory = 'all';
 let showFiltered   = false;
 let tokenClient    = null;
@@ -215,7 +221,7 @@ function onAuthSuccess(tokenResponse) {
   document.getElementById('calendar-prompt').classList.add('hidden');
   document.getElementById('meetings-list').classList.remove('hidden');
 
-  Promise.all([fetchMeetings(), fetchSheetMetrics()]);
+  Promise.all([fetchMeetings(), fetchSheetMetrics(), fetchSDOMetrics()]);
 
   // Auto-refresh token 5 min before expiry (tokens last ~1 hour)
   const refreshIn = ((tokenResponse.expires_in || 3600) - 300) * 1000;
@@ -506,6 +512,112 @@ function renderMetricsError() {
   const bar = document.getElementById('performance-bar');
   if (!bar) return;
   bar.innerHTML += `<p class="metrics-error">Could not load Sheet data. Check that Google Sheets API is enabled in your Cloud project.</p>`;
+}
+
+// ============================================================
+// SDO LOG METRICS
+// ============================================================
+
+async function fetchSDOMetrics() {
+  if (!accessToken) return;
+  const el = document.getElementById('sdo-section');
+  if (!el) return;
+  el.classList.remove('hidden');
+  el.innerHTML = `
+    <div class="performance-header">
+      <span class="section-label" style="margin:0">Same Day Onboarding — This Week</span>
+    </div>
+    <div class="metric-cards">${[1,2,3,4,5].map(() =>
+      '<div class="metric-card metric-loading"><div class="metric-value">…</div><div class="metric-label">Loading</div></div>'
+    ).join('')}</div>`;
+  try {
+    const res = await gapi.client.sheets.spreadsheets.values.get({
+      spreadsheetId: SDO_SHEET_ID,
+      range: `'${SDO_TAB}'!A2:Y`,
+      valueRenderOption: 'FORMATTED_VALUE'
+    });
+    sdoMetrics = computeSDOMetrics(res.result.values || []);
+    renderSDOWidget();
+  } catch (e) {
+    console.error('SDO fetch failed', e);
+    el.innerHTML += `<p class="metrics-error">Could not load SDO Log data.</p>`;
+  }
+}
+
+function getWeekBounds() {
+  const now = new Date();
+  const day = now.getDay();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
+  monday.setHours(0, 0, 0, 0);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  sunday.setHours(23, 59, 59, 999);
+  return { monday, sunday };
+}
+
+function computeSDOMetrics(rows) {
+  const { monday, sunday } = getWeekBounds();
+  const thisWeek = rows.filter(row => {
+    const d = new Date(row[SDO.DATE] || '');
+    return !isNaN(d) && d >= monday && d <= sunday;
+  });
+
+  const scheduled    = thisWeek.length;
+  const activated    = thisWeek.filter(r => (r[SDO.READY] || '').toUpperCase() === 'YES').length;
+  const canceled     = thisWeek.filter(r => (r[SDO.ZOOM_NOTES] || '').toLowerCase().includes('cancel')).length;
+  const rescheduled  = thisWeek.filter(r => (r[SDO.RESCHEDULED] || '').toUpperCase() === 'YES').length;
+  const rate         = scheduled > 0 ? Math.round((activated / scheduled) * 100) : 0;
+
+  const agentMap = {};
+  thisWeek.forEach(r => {
+    const name = (r[SDO.AGENT] || 'Unknown').trim();
+    if (!agentMap[name]) agentMap[name] = { scheduled: 0, activated: 0, canceled: 0 };
+    agentMap[name].scheduled++;
+    if ((r[SDO.READY] || '').toUpperCase() === 'YES') agentMap[name].activated++;
+    if ((r[SDO.ZOOM_NOTES] || '').toLowerCase().includes('cancel')) agentMap[name].canceled++;
+  });
+
+  const agents = Object.entries(agentMap)
+    .map(([name, s]) => ({ name, ...s, rate: s.scheduled > 0 ? Math.round((s.activated / s.scheduled) * 100) : 0 }))
+    .sort((a, b) => b.scheduled - a.scheduled);
+
+  return { scheduled, activated, canceled, rescheduled, rate, agents };
+}
+
+function renderSDOWidget() {
+  const el = document.getElementById('sdo-section');
+  if (!el || !sdoMetrics) return;
+  const { scheduled, activated, canceled, rescheduled, rate, agents } = sdoMetrics;
+
+  const agentRows = agents.map(a => `
+    <tr>
+      <td>${escHtml(a.name)}</td>
+      <td class="num">${a.scheduled}</td>
+      <td class="num">${a.activated}</td>
+      <td class="num">${a.canceled}</td>
+      <td class="num"><span class="rate-badge ${a.rate >= 70 ? 'rate-good' : a.rate >= 40 ? 'rate-ok' : 'rate-low'}">${a.rate}%</span></td>
+    </tr>`).join('');
+
+  el.innerHTML = `
+    <div class="performance-header">
+      <span class="section-label" style="margin:0">Same Day Onboarding — This Week</span>
+      <button class="btn-refresh-metrics" onclick="fetchSDOMetrics()" title="Refresh">&#8635; Refresh</button>
+    </div>
+    <div class="metric-cards">
+      <div class="metric-card"><div class="metric-value">${scheduled}</div><div class="metric-label">Scheduled</div></div>
+      <div class="metric-card"><div class="metric-value">${activated}</div><div class="metric-label">Activated</div></div>
+      <div class="metric-card"><div class="metric-value">${canceled}</div><div class="metric-label">Canceled</div></div>
+      <div class="metric-card"><div class="metric-value">${rescheduled}</div><div class="metric-label">Rescheduled</div></div>
+      <div class="metric-card"><div class="metric-value">${rate}%</div><div class="metric-label">Activation Rate</div></div>
+    </div>
+    ${agents.length ? `
+    <div class="sdo-table-wrap">
+      <table class="sdo-table">
+        <thead><tr><th>Agent</th><th>Scheduled</th><th>Activated</th><th>Canceled</th><th>Rate</th></tr></thead>
+        <tbody>${agentRows}</tbody>
+      </table>
+    </div>` : ''}`;
 }
 
 function formatRelativeTime(date) {
@@ -983,6 +1095,7 @@ function init() {
     if (accessToken) {
       fetchMeetings();
       fetchSheetMetrics();
+      fetchSDOMetrics();
     }
   }, 300000);
 
