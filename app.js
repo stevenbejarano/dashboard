@@ -29,10 +29,6 @@ const DEFAULT_SETTINGS = {
     'Resources and Process Docs',
     'Volume Tracking'
   ],
-  wbr: {
-    merchant: { dayOfWeek: 1 },   // Monday — change in Settings
-    iops:     { dayOfWeek: 3 }    // Wednesday — change in Settings
-  },
   // Each metric fetches a full row range and uses the last non-empty cell as current week.
   // Add more metrics here as Sigma data moves into Sheets.
   metrics: [
@@ -97,9 +93,6 @@ const DEFAULT_RESOURCES = [
 
 let settings    = loadJSON('dash_settings', DEFAULT_SETTINGS);
 let resources   = loadJSON('dash_resources', DEFAULT_RESOURCES);
-let wbrState    = loadJSON('dash_wbr_state', { merchant: null, iops: null }); // lastCompleted dates
-// Stores the current week's doc URL, pasted in by the user each week
-let wbrLinks    = loadJSON('dash_wbr_links', { merchant: '', iops: '' });
 let meetings      = [];   // from Google Calendar (runtime only)
 let metricValues  = {};   // { metricId: { current, previous, updatedAt } }
 let sdoMetrics    = null; // computed from SDO Log sheet
@@ -145,7 +138,6 @@ function deepMerge(base, override) {
 function save() {
   localStorage.setItem('dash_settings', JSON.stringify(settings));
   localStorage.setItem('dash_resources', JSON.stringify(resources));
-  localStorage.setItem('dash_wbr_state', JSON.stringify(wbrState));
 }
 
 // ============================================================
@@ -262,7 +254,6 @@ async function fetchMeetings() {
     meetings = res.result.items || [];
     renderMeetings();
     renderSuggested();
-    renderWBR();
   } catch (e) {
     console.error('Calendar fetch failed', e);
   }
@@ -795,105 +786,6 @@ function trackClick(id) {
   setTimeout(() => { renderSuggested(); renderResources(); }, 100);
 }
 
-// ============================================================
-// WBR LOGIC
-// ============================================================
-
-function isWBRDueToday(type) {
-  const today = new Date().getDay();
-  if (type === 'merchant') {
-    return today === (settings.wbr.merchant.dayOfWeek ?? 1);
-  }
-  if (type === 'iops') {
-    if (today !== (settings.wbr.iops.dayOfWeek ?? 3)) return false;
-    const last = wbrState.iops ? new Date(wbrState.iops) : null;
-    if (!last) return true;
-    return (Date.now() - last) / 86400000 >= 13;
-  }
-  return false;
-}
-
-function renderWBR() {
-  const container = document.getElementById('wbr-cards');
-  // Cards are always visible — due day just highlights them
-  container.innerHTML = [
-    wbrCardHTML('merchant', 'Merchant WBR', 'Weekly'),
-    wbrCardHTML('iops',     'Iops WBR',     'Bi-Weekly')
-  ].join('');
-}
-
-function wbrCardHTML(type, name, freq) {
-  const savedDraft = localStorage.getItem(`wbr_draft_${type}`) || '';
-  const savedLink  = wbrLinks[type] || '';
-  const due        = isWBRDueToday(type);
-  const openBtn    = savedLink
-    ? `<a class="wbr-open-link" href="${escAttr(savedLink)}" target="_blank">Open this week's doc ↗</a>`
-    : `<span class="wbr-open-link" style="color:var(--text-light);cursor:default;">Paste this week's link below</span>`;
-
-  return `
-    <div class="wbr-card${due ? ' wbr-due' : ''}" id="wbr-${type}">
-      <div class="wbr-card-header">
-        <span class="wbr-card-title">📊 ${escHtml(name)}</span>
-        <span class="wbr-badge">${due ? '🔴 Due Today' : escHtml(freq)}</span>
-      </div>
-      ${openBtn}
-      <div class="wbr-link-row">
-        <input
-          type="url"
-          id="wbr-link-${type}"
-          class="wbr-link-input"
-          placeholder="Paste this week's Google Doc link…"
-          value="${escAttr(savedLink)}"
-          oninput="saveWBRLink('${type}')"
-        >
-      </div>
-      <textarea
-        id="wbr-draft-${type}"
-        placeholder="Draft your commentary here — key trends, highlights, risks, and actions…"
-        oninput="saveDraft('${type}')"
-      >${escHtml(savedDraft)}</textarea>
-      <div class="wbr-actions">
-        <button class="btn-copy" id="wbr-copy-${type}" onclick="copyCommentary('${type}')">Copy Commentary</button>
-        <button class="btn-complete" onclick="markWBRComplete('${type}')">Dismiss ✕</button>
-      </div>
-    </div>`;
-}
-
-function saveWBRLink(type) {
-  const val = document.getElementById(`wbr-link-${type}`)?.value.trim() || '';
-  wbrLinks[type] = val;
-  localStorage.setItem('dash_wbr_links', JSON.stringify(wbrLinks));
-  // Update the open link in place
-  const card = document.getElementById(`wbr-${type}`);
-  if (!card) return;
-  const openEl = card.querySelector('.wbr-open-link');
-  if (!openEl) return;
-  if (val) {
-    openEl.outerHTML = `<a class="wbr-open-link" href="${escAttr(val)}" target="_blank">Open this week's doc ↗</a>`;
-  }
-}
-
-function saveDraft(type) {
-  const val = document.getElementById(`wbr-draft-${type}`)?.value || '';
-  localStorage.setItem(`wbr_draft_${type}`, val);
-}
-
-function copyCommentary(type) {
-  const text = document.getElementById(`wbr-draft-${type}`)?.value || '';
-  if (!text.trim()) return;
-  navigator.clipboard.writeText(text).then(() => {
-    const btn = document.getElementById(`wbr-copy-${type}`);
-    btn.textContent = 'Copied!';
-    btn.classList.add('copied');
-    setTimeout(() => { btn.textContent = 'Copy Commentary'; btn.classList.remove('copied'); }, 2000);
-  });
-}
-
-function markWBRComplete(type) {
-  wbrState[type] = new Date().toISOString();
-  save();
-  document.getElementById(`wbr-${type}`)?.remove();
-}
 
 // ============================================================
 // RESOURCE MODAL (ADD / EDIT)
@@ -1002,8 +894,6 @@ function deleteResource() {
 function openSettings() {
   document.getElementById('setting-client-id').value = settings.googleClientId || '';
   document.getElementById('setting-current-col').value = settings.currentCol || '';
-  document.getElementById('setting-merchant-day').value = settings.wbr.merchant.dayOfWeek ?? 1;
-  document.getElementById('setting-iops-day').value = settings.wbr.iops.dayOfWeek ?? 3;
   renderFilterTags();
   renderCategoryTagsInSettings();
   openModal('modal-settings');
@@ -1054,13 +944,10 @@ function removeCat(i) {
 function saveSettings() {
   settings.googleClientId         = document.getElementById('setting-client-id').value.trim();
   settings.currentCol             = document.getElementById('setting-current-col').value.replace(/[^a-zA-Z]/g, '').toUpperCase();
-  settings.wbr.merchant.dayOfWeek = parseInt(document.getElementById('setting-merchant-day').value);
-  settings.wbr.iops.dayOfWeek     = parseInt(document.getElementById('setting-iops-day').value);
   save();
   closeModal();
   renderCategoryTabs();
   renderResources();
-  renderWBR();
   renderMeetings();
   // Re-fetch metrics with updated column
   if (accessToken) fetchSheetMetrics();
@@ -1142,7 +1029,6 @@ function init() {
   renderCategoryTabs();
   renderResources();
   renderSuggested();
-  renderWBR();
   renderMetricsNeedColumn(); // Show performance bar immediately; updates after auth + column set
 
   // Keyboard shortcut: Escape to close modal

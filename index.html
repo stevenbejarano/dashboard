@@ -54,11 +54,6 @@
         <div id="filtered-list" class="filtered-list hidden"></div>
       </section>
 
-      <!-- WBR PANEL (contextual) -->
-      <section id="wbr-panel">
-        <div id="wbr-cards"></div>
-      </section>
-
     </aside>
 
     <!-- RIGHT PANEL: Resources -->
@@ -140,7 +135,7 @@
 
         <div class="settings-section">
           <h4>Performance — Current Week Column</h4>
-          <p class="settings-hint">Enter the column letter from the <strong>Q2 Weekly Trackers</strong> sheet that contains this week's data (e.g. <strong>I</strong>, <strong>J</strong>, <strong>K</strong>…). Update this each week alongside your WBR link. The previous column is used automatically for trend arrows.</p>
+          <p class="settings-hint">Enter the column letter from the <strong>Q2 Weekly Trackers</strong> sheet that contains this week's data (e.g. <strong>I</strong>, <strong>J</strong>, <strong>K</strong>…). Update this each week. The previous column is used automatically for trend arrows.</p>
           <label>Current column
             <input type="text" id="setting-current-col" placeholder="e.g. I" maxlength="3" style="width:80px;text-transform:uppercase">
           </label>
@@ -153,36 +148,6 @@
           <div class="tag-input-row">
             <input type="text" id="new-filter-input" placeholder="Add keyword…" onkeydown="if(event.key==='Enter')addFilter()">
             <button class="btn btn-sm" onclick="addFilter()">Add</button>
-          </div>
-        </div>
-
-        <div class="settings-section">
-          <h4>WBR Schedule</h4>
-          <div class="wbr-setting">
-            <label>Merchant WBR — Day
-              <select id="setting-merchant-day">
-                <option value="0">Sunday</option>
-                <option value="1">Monday</option>
-                <option value="2">Tuesday</option>
-                <option value="3">Wednesday</option>
-                <option value="4">Thursday</option>
-                <option value="5">Friday</option>
-                <option value="6">Saturday</option>
-              </select>
-            </label>
-          </div>
-          <div class="wbr-setting">
-            <label>Iops WBR — Day
-              <select id="setting-iops-day">
-                <option value="0">Sunday</option>
-                <option value="1">Monday</option>
-                <option value="2">Tuesday</option>
-                <option value="3">Wednesday</option>
-                <option value="4">Thursday</option>
-                <option value="5">Friday</option>
-                <option value="6">Saturday</option>
-              </select>
-            </label>
           </div>
         </div>
 
