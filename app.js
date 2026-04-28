@@ -1182,6 +1182,23 @@ function handleOverlayClick(e) {
 // ============================================================
 
 // ============================================================
+// DARK MODE
+// ============================================================
+
+function applyTheme() {
+  const dark = localStorage.getItem('dash_dark') === '1';
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  const btn = document.getElementById('btn-dark-mode');
+  if (btn) btn.textContent = dark ? '☀' : '🌙';
+}
+
+function toggleDarkMode() {
+  const dark = localStorage.getItem('dash_dark') === '1';
+  localStorage.setItem('dash_dark', dark ? '0' : '1');
+  applyTheme();
+}
+
+// ============================================================
 // COLLAPSIBLE PANELS
 // ============================================================
 
@@ -1241,6 +1258,7 @@ function init() {
     }
   }, 300000);
 
+  applyTheme();
   renderCategoryTabs();
   renderResources();
   renderSuggested();

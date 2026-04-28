@@ -29,6 +29,30 @@
   --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
+:root[data-theme="dark"] {
+  --bg: #0F172A;
+  --surface: #1E293B;
+  --surface-2: #263348;
+  --border: #334155;
+  --primary: #818CF8;
+  --primary-hover: #6366F1;
+  --primary-light: #1E274D;
+  --text: #F1F5F9;
+  --text-muted: #94A3B8;
+  --text-light: #64748B;
+  --success: #4ADE80;
+  --success-light: #14532D;
+  --warning: #FCD34D;
+  --warning-light: #451A03;
+  --danger: #F87171;
+  --danger-light: #4C0519;
+  --wbr-color: #A78BFA;
+  --wbr-light: #1E1A3D;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+  --shadow: 0 4px 6px -1px rgba(0,0,0,0.4), 0 2px 4px -1px rgba(0,0,0,0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.5), 0 4px 6px -2px rgba(0,0,0,0.3);
+}
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
@@ -94,6 +118,7 @@ a:hover { text-decoration: underline; }
   padding: 4px 10px;
   border-radius: 99px;
 }
+[data-theme="dark"] .badge-connected { color: #4ade80; }
 
 /* ================================
    BUTTONS
@@ -335,6 +360,7 @@ a:hover { text-decoration: underline; }
   border-left-color: var(--danger);
   background: #FFF8F8;
 }
+[data-theme="dark"] .wbr-card.wbr-due { background: #2d1010; }
 
 .wbr-card-header {
   display: flex;
@@ -375,7 +401,7 @@ a:hover { text-decoration: underline; }
   background: var(--surface-2);
   transition: border-color 0.15s;
 }
-.wbr-card textarea:focus { border-color: var(--primary); background: white; }
+.wbr-card textarea:focus { border-color: var(--primary); background: var(--surface); }
 .wbr-card textarea::placeholder { color: var(--text-light); }
 
 .wbr-actions {
@@ -645,6 +671,13 @@ a:hover { text-decoration: underline; }
 .cat-3 { background: #FCE7F3; color: #831843; }
 .cat-4 { background: #E0F2FE; color: #0C4A6E; }
 .cat-5 { background: #FFF7ED; color: #7C2D12; }
+
+[data-theme="dark"] .cat-0 { background: #1e274d; color: #a5b4fc; }
+[data-theme="dark"] .cat-1 { background: #3d2c0a; color: #fcd34d; }
+[data-theme="dark"] .cat-2 { background: #14532d; color: #4ade80; }
+[data-theme="dark"] .cat-3 { background: #3b1030; color: #f9a8d4; }
+[data-theme="dark"] .cat-4 { background: #0c2a4a; color: #7dd3fc; }
+[data-theme="dark"] .cat-5 { background: #3d1a0a; color: #fed7aa; }
 
 .resource-card-footer {
   display: flex;
@@ -1037,6 +1070,10 @@ a:hover { text-decoration: underline; }
 .rate-ok   { background: #fef9c3; color: #713f12; }
 .rate-low  { background: #fee2e2; color: #991b1b; }
 
+[data-theme="dark"] .rate-good { background: #14532d; color: #4ade80; }
+[data-theme="dark"] .rate-ok   { background: #3d2c0a; color: #fcd34d; }
+[data-theme="dark"] .rate-low  { background: #4c0519; color: #f87171; }
+
 /* ================================
    WBR DRAFT PANEL
 ================================ */
@@ -1162,6 +1199,7 @@ a:hover { text-decoration: underline; }
   margin-top: 4px;
 }
 .trend-up      { color: #16A34A; }
+[data-theme="dark"] .trend-up { color: #4ade80; }
 .trend-down    { color: var(--danger); }
 .trend-neutral { color: var(--text-muted); }
 
