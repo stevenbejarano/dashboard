@@ -264,7 +264,26 @@ async function fetchMeetings() {
       orderBy: 'startTime',
       maxResults: 30
     });
-    meetings = res.result.items || [];
+    const raw = res.result.items || [];
+
+    // Deduplicate by event ID (same event can appear from multiple calendars)
+    const seen = new Set();
+    const deduped = raw.filter(m => {
+      const key = m.id;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    // Drop all-day events (no dateTime = not a scheduled meeting)
+    // Drop events the user has declined
+    meetings = deduped.filter(m => {
+      if (!m.start?.dateTime) return false; // all-day / date-only event
+      const self = (m.attendees || []).find(a => a.self);
+      if (self?.responseStatus === 'declined') return false;
+      return true;
+    });
+
     meetingsExpanded = false; // reset to compact view on fresh load
     renderMeetings();
     renderSuggested();
