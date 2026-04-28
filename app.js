@@ -599,7 +599,8 @@ function computeSDOMetrics(rows, filter) {
 
   const scheduled   = subset.length;
   const activated   = subset.filter(r => (r[SDO.READY] || '').toUpperCase() === 'YES').length;
-  const canceled    = subset.filter(r => (r[SDO.ZOOM_NOTES] || '').toLowerCase().includes('cancel')).length;
+  const isNoShow    = r => /no.?show/i.test(r[SDO.ZOOM_NOTES] || '');
+  const canceled    = subset.filter(isNoShow).length;
   const rescheduled = subset.filter(r => (r[SDO.RESCHEDULED] || '').toUpperCase() === 'YES').length;
   const rate        = scheduled > 0 ? Math.round((activated / scheduled) * 100) : 0;
 
@@ -609,7 +610,7 @@ function computeSDOMetrics(rows, filter) {
     if (!agentMap[name]) agentMap[name] = { scheduled: 0, activated: 0, canceled: 0 };
     agentMap[name].scheduled++;
     if ((r[SDO.READY] || '').toUpperCase() === 'YES') agentMap[name].activated++;
-    if ((r[SDO.ZOOM_NOTES] || '').toLowerCase().includes('cancel')) agentMap[name].canceled++;
+    if (isNoShow(r)) agentMap[name].canceled++;
   });
 
   const agents = Object.entries(agentMap)
@@ -648,14 +649,14 @@ function renderSDOWidget() {
     <div class="metric-cards">
       <div class="metric-card"><div class="metric-value">${scheduled}</div><div class="metric-label">Scheduled</div></div>
       <div class="metric-card"><div class="metric-value">${activated}</div><div class="metric-label">Activated</div></div>
-      <div class="metric-card"><div class="metric-value">${canceled}</div><div class="metric-label">Canceled</div></div>
+      <div class="metric-card"><div class="metric-value">${canceled}</div><div class="metric-label">No Shows</div></div>
       <div class="metric-card"><div class="metric-value">${rescheduled}</div><div class="metric-label">Rescheduled</div></div>
       <div class="metric-card"><div class="metric-value">${rate}%</div><div class="metric-label">Activation Rate</div></div>
     </div>
     ${agents.length ? `
     <div class="sdo-table-wrap">
       <table class="sdo-table">
-        <thead><tr><th>Agent</th><th>Scheduled</th><th>Activated</th><th>Canceled</th><th>Rate</th></tr></thead>
+        <thead><tr><th>Agent</th><th>Scheduled</th><th>Activated</th><th>No Shows</th><th>Rate</th></tr></thead>
         <tbody>${agentRows}</tbody>
       </table>
     </div>` : ''}`;
