@@ -159,11 +159,84 @@
         </div>
 
         <div class="settings-section">
+          <h4>Data Sources — Google Sheets</h4>
+          <p class="settings-hint">Open your sheet in Google Sheets and copy the ID from the URL:<br>docs.google.com/spreadsheets/d/<strong>[SHEET-ID]</strong>/edit</p>
+          <label>Performance Sheet ID
+            <input type="text" id="setting-perf-sheet-id" placeholder="Paste sheet ID here">
+          </label>
+          <label style="margin-top:8px">SDO Log Sheet ID
+            <input type="text" id="setting-sdo-sheet-id" placeholder="Paste sheet ID here">
+          </label>
+          <label style="margin-top:8px">SDO Tab Name
+            <input type="text" id="setting-sdo-tab" placeholder="e.g. SDO Log">
+          </label>
+        </div>
+
+        <div class="settings-section">
           <h4>Performance — Current Week Column</h4>
-          <p class="settings-hint">Enter the column letter from the <strong>Q2 Weekly Trackers</strong> sheet that contains this week's data (e.g. <strong>I</strong>, <strong>J</strong>, <strong>K</strong>…). Update this each week. The previous column is used automatically for trend arrows.</p>
+          <p class="settings-hint">Enter the column letter from your performance sheet that contains this week's data (e.g. <strong>I</strong>, <strong>J</strong>, <strong>K</strong>…). Update this each week. The previous column is used automatically for trend arrows.</p>
           <label>Current column
             <input type="text" id="setting-current-col" placeholder="e.g. I" maxlength="3" style="width:80px;text-transform:uppercase">
           </label>
+        </div>
+
+        <div class="settings-section">
+          <h4>Performance Metrics</h4>
+          <p class="settings-hint">Each metric reads a single cell from your sheet at the current week column and the row you specify.</p>
+          <div id="metrics-settings-list"></div>
+          <button class="btn btn-sm btn-ghost" style="margin-top:8px" onclick="addMetricSetting()">+ Add Metric</button>
+        </div>
+
+        <div class="settings-section">
+          <h4>WBR Commentary</h4>
+          <p class="settings-hint">These values populate the auto-generated WBR draft. Update quarterly numbers each quarter.</p>
+          <label>Team Name
+            <input type="text" id="setting-wbr-team" placeholder="e.g. Integrations Onboarding">
+          </label>
+          <label style="margin-top:8px">Authors
+            <input type="text" id="setting-wbr-authors" placeholder="e.g. Jane Smith  John Doe">
+          </label>
+          <div class="settings-two-col" style="margin-top:8px">
+            <label>Metric 1 — Prior Qtr Exit
+              <input type="text" id="setting-wbr-sdr-exit" placeholder="e.g. 33.3%">
+            </label>
+            <label>Metric 1 — QTD Plan
+              <input type="text" id="setting-wbr-sdr-qtd" placeholder="e.g. 41%">
+            </label>
+            <label>Metric 2 — Prior Qtr Exit
+              <input type="text" id="setting-wbr-ad30-exit" placeholder="e.g. 69.9%">
+            </label>
+            <label>Metric 2 — QTD Plan
+              <input type="text" id="setting-wbr-ad30-qtd" placeholder="e.g. 69%">
+            </label>
+            <label>Metric 2 — Quarter Goal
+              <input type="text" id="setting-wbr-ad30-goal" placeholder="e.g. 69%">
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <details class="settings-advanced">
+            <summary>SDO Column Mapping (Advanced)</summary>
+            <p class="settings-hint" style="margin-top:8px">0-based column index in your SDO Log sheet (column A = 0, B = 1, C = 2…). Only change these if your SDO sheet columns differ from the defaults.</p>
+            <div class="settings-two-col">
+              <label>Ready / Activated (col #)
+                <input type="number" id="setting-sdo-col-ready" min="0" placeholder="1">
+              </label>
+              <label>Agent Name (col #)
+                <input type="number" id="setting-sdo-col-agent" min="0" placeholder="4">
+              </label>
+              <label>Session Date (col #)
+                <input type="number" id="setting-sdo-col-date" min="0" placeholder="5">
+              </label>
+              <label>Rescheduled (col #)
+                <input type="number" id="setting-sdo-col-reschedule" min="0" placeholder="14">
+              </label>
+              <label>Zoom / No-Show Notes (col #)
+                <input type="number" id="setting-sdo-col-zoom" min="0" placeholder="17">
+              </label>
+            </div>
+          </details>
         </div>
 
         <div class="settings-section">
@@ -234,6 +307,6 @@
 
   </div>
 
-  <script src="app.js?v=8"></script>
+  <script src="app.js?v=9"></script>
 </body>
 </html>

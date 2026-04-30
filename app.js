@@ -8,26 +8,29 @@
 // DEFAULT CONFIG
 // ============================================================
 
-const SHEET_ID     = '17felUngAmt-TYcnrKfjKME3vftwi67hqVt1NJPwas4U';
-
-// Update these each quarter
-const WBR_CONFIG = {
-  authors:      'Stephanie Jimenez  Steven Bejarano',
-  sdrQ1Exit:   '33.3%',
-  sdrQTDPlan:  '41%',
-  ad30Q1Exit:  '69.9%',
-  ad30QTDPlan: '69%',
-  ad30Goal:    '69%'
-};
-const SDO_SHEET_ID = '1Li_WeRTBzItubNghkrX5VLGuuHc4E99hW1qCYI-oarY';
-const SDO_TAB      = 'SDO Log';
-
-// SDO Log column indices (0-based)
-const SDO = { READY: 1, AGENT: 4, DATE: 5, RESCHEDULED: 14, ZOOM_NOTES: 17, DURATION: 23 };
-
 const DEFAULT_SETTINGS = {
   googleClientId: '',
-  currentCol: '',   // Column letter for this week's data, e.g. "I", "J", "K"
+  currentCol: '',
+  performanceSheetId: '',
+  sdoSheetId: '',
+  sdoTab: 'SDO Log',
+  wbrConfig: {
+    teamName: '',
+    authors: '',
+    sdrQ1Exit: '',
+    sdrQTDPlan: '',
+    ad30Q1Exit: '',
+    ad30QTDPlan: '',
+    ad30Goal: ''
+  },
+  sdoColumns: {
+    READY: 1,
+    AGENT: 4,
+    DATE: 5,
+    RESCHEDULED: 14,
+    ZOOM_NOTES: 17,
+    DURATION: 23
+  },
   meetingFilters: [
     'DoorDash Onboarding Support',
     'Same Day Onboarding Scheduler'
@@ -39,62 +42,10 @@ const DEFAULT_SETTINGS = {
     'Resources and Process Docs',
     'Volume Tracking'
   ],
-  // Each metric fetches a full row range and uses the last non-empty cell as current week.
-  // Add more metrics here as Sigma data moves into Sheets.
-  metrics: [
-    { id: 'same_day_ready', label: 'Same Day Ready',    tab: 'Q2 Weekly Trackers', row: 37, startCol: 'I', endCol: 'AZ' },
-    { id: 'active_day30',   label: 'Active by Day 30',  tab: 'Q2 Weekly Trackers', row: 94, startCol: 'I', endCol: 'AZ' }
-  ]
+  metrics: []
 };
 
 const DEFAULT_RESOURCES = [
-  {id:'r1',title:'MOE QUEUE',url:'https://doordash.atlassian.net/jira/servicedesk/projects/MSSD/queues/custom/12782',category:'Volume Tracking',tags:['jira','queue','mssd'],days:[],calKeywords:'',clickCount:0},
-  {id:'r2',title:'IOSD',url:'https://doordash.atlassian.net/jira/servicedesk/projects/IOSD/queues/custom/4437',category:'Volume Tracking',tags:['jira','queue','iosd'],days:[],calKeywords:'',clickCount:0},
-  {id:'r5',title:'Golden POS Support',url:'https://figment.lightning.force.com/lightning/r/Report/00OKd000003ujBkMAI/view?queryScope=userFolders',category:'Volume Tracking',tags:['pos','golden'],days:[],calKeywords:'',clickCount:0},
-  {id:'r6',title:'Response Receive',url:'https://doordashmx.lightning.force.com/lightning/o/WorkPlan/list?filterName=Silver_Px_Response_Received',category:'Volume Tracking',tags:['salesforce','silver'],days:[],calKeywords:'',clickCount:0},
-  {id:'r7',title:'POS Escalations',url:'https://doordashmx.lightning.force.com/lightning/o/WorkPlan/list?filterName=Silver_POS_escalations',category:'Volume Tracking',tags:['pos','escalations'],days:[],calKeywords:'',clickCount:0},
-  {id:'r8',title:'BAT',url:'https://unity.doordash.com/suites/merchant/marketplace-admin/activations/ssio',category:'Volume Tracking',tags:['unity','activations'],days:[],calKeywords:'',clickCount:0},
-  {id:'r9',title:'DDXSalesforce',url:'https://doordashmx.lightning.force.com/lightning/o/WorkPlan/list?filterName=IO_Team_Email_Response_Received_Golden',category:'Volume Tracking',tags:['salesforce','golden'],days:[],calKeywords:'',clickCount:0},
-  {id:'r11',title:'O and E Weekly Huddle',url:'https://docs.google.com/document/d/17er1Eh-MG6jdWzBXu-dcNoiut1-bW4JU_5Mud-cRZhU/edit?tab=t.vn19nuepkb1a',category:'Meeting Agendas',tags:['huddle','weekly'],days:[],calKeywords:'O&E',clickCount:0},
-  {id:'r12',title:'Pre-Live Leads Sync',url:'https://docs.google.com/document/d/1ySkQhk9jrYB8JXYrl6Q6tSreWSWgy9QXgR6ZgZripns/edit',category:'Meeting Agendas',tags:['leads','sync'],days:[1,3],calKeywords:'Pre-Live Leads',clickCount:0},
-  {id:'r13',title:'Vibe Check Weekly',url:'https://docs.google.com/document/d/1Cup8oHLyXkN42r34-LzUeuQ889bXufiGtLzkL9cwJug/edit',category:'Meeting Agendas',tags:['vibe','weekly'],days:[],calKeywords:'Vibe Check',clickCount:0},
-  {id:'r14',title:'2026 Task Schedule Rx Mkt Integrations',url:'https://docs.google.com/spreadsheets/d/1dgDPKusvaCc1lwRjvbHj1qyOQvflsT8boKKwzPtLj-A/edit',category:'Team Docs',tags:['task','schedule'],days:[],calKeywords:'',clickCount:0},
-  {id:'r15',title:'Attendance Occurrence Tracker',url:'https://docs.google.com/spreadsheets/d/1sd4jPV6oHg9d4wfMMyjRUfVLjCMlKgznT_J6_k40jjo/edit',category:'Team Docs',tags:['attendance','tracker'],days:[],calKeywords:'',clickCount:0},
-  {id:'r16',title:'Competencies and Responsibilities Framework',url:'https://docs.google.com/spreadsheets/d/1OArfmSpa_rr_aH6771SECyl7-WSQlTBqnBfiaOR_O9A/edit',category:'Team Docs',tags:['competencies','framework'],days:[],calKeywords:'',clickCount:0},
-  {id:'r17',title:'I.Ops TL Weekly Notes',url:'https://docs.google.com/document/d/1pcXANo__iO4x9oVqMiL2aPcWn9kPFw0aoCrzh9yd9h8/edit',category:'Team Docs',tags:['tl','notes','weekly'],days:[1,2,3,4,5],calKeywords:'',clickCount:0},
-  {id:'r18',title:'Values 2.0',url:'https://docs.google.com/spreadsheets/d/1qtv6gCegnnq9xJfe6w6BBAOiIjOUrv45ppxzzeGjs58/edit',category:'Team Docs',tags:['values'],days:[],calKeywords:'',clickCount:0},
-  {id:'r19',title:'I.Ops Jira Board',url:'https://doordash.atlassian.net/jira/core/projects/IOMXS/board',category:'Team Docs',tags:['jira','board'],days:[],calKeywords:'',clickCount:0},
-  {id:'r20',title:'I.Ops Reporting by Kohlforce',url:'https://doordash.atlassian.net/jira/dashboards/31198',category:'Team Docs',tags:['jira','reporting'],days:[],calKeywords:'',clickCount:0},
-  {id:'r21',title:'Integration Ops Confluence',url:'https://doordash.atlassian.net/wiki/spaces/INTEGRATIO/overview',category:'Team Docs',tags:['confluence','integration'],days:[],calKeywords:'',clickCount:0},
-  {id:'r22',title:'Atlassian Wiki Homepage',url:'https://doordash.atlassian.net/wiki/spaces/AT/overview',category:'Team Docs',tags:['confluence','atlassian'],days:[],calKeywords:'',clickCount:0},
-  {id:'r23',title:'Team Figment Tracking View',url:'https://figment.lightning.force.com/lightning/r/Report/00OKd000003oBb3MAE/view?queryScope=userFolders',category:'Team Docs',tags:['figment','tracking'],days:[],calKeywords:'',clickCount:0},
-  {id:'r24',title:'Drive',url:'https://drive.google.com/drive/home',category:'Team Docs',tags:['drive','google'],days:[1,2,3,4,5],calKeywords:'',clickCount:0},
-  {id:'r25',title:'MxOps Workflow Manager',url:'https://app.sigmacomputing.com/doordash/workbook/MxOps-Workflow-Manager-Rx-4XgWfVw4VJgUYETTQpjBhs?:nodeId=5a6zYtDbDU',category:'Team Docs',tags:['sigma','workflow'],days:[],calKeywords:'',clickCount:0},
-  {id:'r26',title:'I.Ops Support Hub Sigma',url:'https://app.sigmacomputing.com/doordash/workbook/I-Ops-Support-Hub-2d1XT4htLSnxVB9fdXGKHL',category:'Team Docs',tags:['sigma','support'],days:[1,2,3,4,5],calKeywords:'',clickCount:0},
-  {id:'r27',title:'Onboarding Dashboard Sigma',url:'https://app.sigmacomputing.com/doordash/workbook/Onboarding-Dashboard-4bVAz7o1wyUdG4mmJIg2KF?:nodeId=I4eD-KHa8d',category:'Team Docs',tags:['sigma','onboarding'],days:[],calKeywords:'',clickCount:0},
-  {id:'r28',title:'CHIP I.Ops Glean',url:'https://app.glean.com/chat/agents/0f153216ecab4c5682cca77e4f362643',category:'Team Docs',tags:['chip','glean'],days:[1,2,3,4,5],calKeywords:'',clickCount:0},
-  {id:'r29',title:'DDU LMS',url:'https://doordash.csod.com/phnx/driver.aspx?routename=Learning/Curriculum/CurriculumPlayer&TargetUser=88763&curriculumLoId=4e3611c3-8acb-4f4e-9326-ddf39c544b51',category:'Team Docs',tags:['lms','training'],days:[],calKeywords:'',clickCount:0},
-  {id:'r30',title:'2025 MxOps Pre-Live Task Schedule',url:'https://docs.google.com/spreadsheets/d/1c2yoklvAvR8grr38GMU01kMs2fhn7eTZ7YM2n7iAIvs/edit',category:'Performance Tracking',tags:['pre-live','schedule'],days:[],calKeywords:'',clickCount:0},
-  {id:'r31',title:'Golden Churn Sheet',url:'https://docs.google.com/spreadsheets/d/1l6werqQPvyf0vceE-d13-PJRc_9fbajWt6b1mnnwFNE/edit',category:'Performance Tracking',tags:['churn','golden'],days:[],calKeywords:'',clickCount:0},
-  {id:'r32',title:'Silver Churn Sheet',url:'https://docs.google.com/spreadsheets/d/16tDc92VKLkGq1nkuoaVTIyVWPDgghv8pTlx7k8rHAPU/edit',category:'Performance Tracking',tags:['churn','silver'],days:[],calKeywords:'',clickCount:0},
-  {id:'r33',title:'Q2 2025 Onboarding KR Scorecard',url:'https://docs.google.com/spreadsheets/d/1vXSlms2szaxtAkwlcNDcoG9pmtIhm6T1RSdEsETJOiI/edit',category:'Performance Tracking',tags:['kr','scorecard'],days:[],calKeywords:'',clickCount:0},
-  {id:'r34',title:'2026 Onboarding KR Scorecard',url:'https://docs.google.com/spreadsheets/d/17felUngAmt-TYcnrKfjKME3vftwi67hqVt1NJPwas4U/edit',category:'Performance Tracking',tags:['kr','scorecard','2026'],days:[1,2,3,4,5],calKeywords:'WBR',clickCount:0},
-  {id:'r35',title:'Integrations Onboarding and Support Master Tracker',url:'https://docs.google.com/spreadsheets/d/1ZYHHij8TMFyFYw4zakdLGZeR1UuxnwzSWuM0RtgoN0w/edit',category:'Performance Tracking',tags:['tracker','master'],days:[],calKeywords:'',clickCount:0},
-  {id:'r36',title:'Integrations Onboarding QA Dashboard',url:'https://docs.google.com/spreadsheets/d/1at6dGenB8QXrHp1YQcdCe3aHAYScrsylHJXDXhvk58I/edit',category:'Performance Tracking',tags:['qa','dashboard'],days:[],calKeywords:'',clickCount:0},
-  {id:'r37',title:'CHIP Usage Tracking',url:'https://docs.google.com/spreadsheets/d/1NF9BG5d68nZOM5YXnsf-ES8WG11zoWlEaGl0-Ku0Ljk/edit',category:'Performance Tracking',tags:['chip','tracking'],days:[],calKeywords:'',clickCount:0},
-  {id:'r38',title:'SDO and Operator Tooling Tracker',url:'https://docs.google.com/spreadsheets/d/1mFeNiWDouzAsa023CgQGPGn5cUyB6BAdDD032wugJp0/edit',category:'Performance Tracking',tags:['sdo','tracker'],days:[],calKeywords:'',clickCount:0},
-  {id:'r39',title:'Kohls Query Sandbox',url:'https://app.mode.com/editor/doordash/reports/dc6bc333f07c/queries/0b42f1cadfd3',category:'Performance Tracking',tags:['mode','query'],days:[],calKeywords:'',clickCount:0},
-  {id:'r40',title:'Integrations Matrix Sigma',url:'https://app.sigmacomputing.com/doordash/workbook/Integrations-Matrix-3SymdkxACGahbSRa73OzEd?:nodeId=TF85f1RiDv',category:'Performance Tracking',tags:['sigma','matrix'],days:[],calKeywords:'',clickCount:0},
-  {id:'r41',title:'Figment Case Queue',url:'https://figment.lightning.force.com/lightning/o/Case/list?filterName=00BKd00000CKHUXMA5',category:'Performance Tracking',tags:['figment','cases'],days:[1,2,3,4,5],calKeywords:'',clickCount:0},
-  {id:'r42',title:'Integrations Onboarding QA Form',url:'https://docs.google.com/spreadsheets/d/1m8Ir4uOQUl5_fWGcNWi9YrWqFs8R_76yY-6I0-VrVKg/edit',category:'Resources and Process Docs',tags:['qa','form'],days:[],calKeywords:'',clickCount:0},
-  {id:'r43',title:'MXO I.OPS Support Playbook',url:'https://docs.google.com/document/d/1PVgLRsL_e7qpcdDCJ_9dGBT4KZ9fQWNg_Q7Jlcqf77Q/edit',category:'Resources and Process Docs',tags:['playbook','support'],days:[],calKeywords:'',clickCount:0},
-  {id:'r44',title:'HQRR High Quality Resolution Rate',url:'https://gamma.app/docs/HQRR-High-Quality-Resolution-Rate-kp1zn0xo7fx4rbb?mode=doc',category:'Resources and Process Docs',tags:['hqrr','resolution'],days:[],calKeywords:'',clickCount:0},
-  {id:'r45',title:'New Hire Training Schedule',url:'https://docs.google.com/spreadsheets/d/17SeEOMS2b-eExQ0R4nqCG9tR2fuf0aMOEhHXpcrhqWo/edit',category:'Resources and Process Docs',tags:['training'],days:[],calKeywords:'',clickCount:0},
-  {id:'r46',title:'Square V1 to V2 Migration Agent Guide',url:'https://docs.google.com/document/d/1RApaTBEbFD4F6mRcvmmw3DHMIN_qCCTx8I7bsnhCE64/edit',category:'Resources and Process Docs',tags:['square','migration'],days:[],calKeywords:'',clickCount:0},
-  {id:'r47',title:'IO Rescue Phone Etiquette',url:'https://docs.google.com/presentation/d/1xyYT5vxgSZ2FwZJn74euOs7Hjl0oGcd8VBB8htjq16I/edit',category:'Resources and Process Docs',tags:['phone','etiquette'],days:[],calKeywords:'',clickCount:0},
-  {id:'r48',title:'Performance Rating Definitions',url:'https://docs.google.com/document/d/1dCCkLE9_SiQxTM1enVgkEcqgrfuMnnSNSq2_o9DVHhM/edit',category:'Resources and Process Docs',tags:['performance','rating'],days:[],calKeywords:'',clickCount:0},
-  {id:'r49',title:'Access Management Permissions',url:'https://unity.doordash.com/suites/admin/access-management/apps',category:'Resources and Process Docs',tags:['access','permissions'],days:[],calKeywords:'',clickCount:0},
-  {id:'r50',title:'MultiLOC Deintegration Guide',url:'https://docs.google.com/document/d/1PVgLRsL_e7qpcdDCJ_9dGBT4KZ9fQWNg_Q7Jlcqf77Q/edit?tab=t.v3sen567ts46',category:'Resources and Process Docs',tags:['multiloc','deintegration'],days:[],calKeywords:'',clickCount:0}
 ];
 
 // ============================================================
@@ -441,10 +392,15 @@ function prevColumn(col) {
 }
 
 async function fetchSheetMetrics() {
-  const metrics = settings.metrics || [];
+  const metrics = (settings.metrics || []).filter(m => m.tab && m.row);
   const col = (settings.currentCol || '').replace(/[^a-zA-Z]/g, '').toUpperCase();
 
   if (!metrics.length) return;
+
+  if (!settings.performanceSheetId) {
+    renderMetricsNeedSetup();
+    return;
+  }
 
   if (!col) {
     renderMetricsNeedColumn();
@@ -462,7 +418,7 @@ async function fetchSheetMetrics() {
 
   try {
     const res = await gapi.client.sheets.spreadsheets.values.batchGet({
-      spreadsheetId: SHEET_ID,
+      spreadsheetId: settings.performanceSheetId,
       ranges: allRanges,
       valueRenderOption: 'FORMATTED_VALUE'   // get "34.4%" not "0.344"
     });
@@ -479,6 +435,19 @@ async function fetchSheetMetrics() {
     console.error('Sheets fetch failed', e);
     renderMetricsError();
   }
+}
+
+function renderMetricsNeedSetup() {
+  const bar = document.getElementById('performance-bar');
+  if (!bar) return;
+  bar.classList.remove('hidden');
+  bar.innerHTML = `
+    <div class="performance-header">
+      <span class="section-label" style="margin:0">Performance</span>
+    </div>
+    <div class="metrics-setup-prompt">
+      Add your sheet info in <button class="btn-inline-link" onclick="openSettings()">⚙ Settings → Data Sources</button> to load metrics.
+    </div>`;
 }
 
 function renderMetricsNeedColumn() {
@@ -580,6 +549,7 @@ const SDO_FILTER_LABELS = { 'this-week': 'This Week', 'last-week': 'Last Week', 
 
 async function fetchSDOMetrics() {
   if (!accessToken) return;
+  if (!settings.sdoSheetId) return;
   const el = document.getElementById('sdo-section');
   if (!el) return;
   el.classList.remove('hidden');
@@ -592,8 +562,8 @@ async function fetchSDOMetrics() {
     ).join('')}</div>`;
   try {
     const res = await gapi.client.sheets.spreadsheets.values.get({
-      spreadsheetId: SDO_SHEET_ID,
-      range: `'${SDO_TAB}'!A2:Y`,
+      spreadsheetId: settings.sdoSheetId,
+      range: `'${settings.sdoTab || 'SDO Log'}'!A2:Y`,
       valueRenderOption: 'FORMATTED_VALUE'
     });
     sdoAllRows = res.result.values || [];
@@ -645,25 +615,26 @@ function getDateBounds(filter) {
 }
 
 function computeSDOMetrics(rows, filter) {
+  const cols = settings.sdoColumns;
   const { start, end } = getDateBounds(filter);
   const subset = rows.filter(row => {
-    const d = new Date(row[SDO.DATE] || '');
+    const d = new Date(row[cols.DATE] || '');
     return !isNaN(d) && d >= start && d <= end;
   });
 
   const scheduled   = subset.length;
-  const activated   = subset.filter(r => (r[SDO.READY] || '').toUpperCase() === 'YES').length;
-  const isNoShow    = r => /no.?show/i.test(r[SDO.ZOOM_NOTES] || '');
+  const activated   = subset.filter(r => (r[cols.READY] || '').toUpperCase() === 'YES').length;
+  const isNoShow    = r => /no.?show/i.test(r[cols.ZOOM_NOTES] || '');
   const canceled    = subset.filter(isNoShow).length;
-  const rescheduled = subset.filter(r => (r[SDO.RESCHEDULED] || '').toUpperCase() === 'YES').length;
+  const rescheduled = subset.filter(r => (r[cols.RESCHEDULED] || '').toUpperCase() === 'YES').length;
   const rate        = scheduled > 0 ? Math.round((activated / scheduled) * 100) : 0;
 
   const agentMap = {};
   subset.forEach(r => {
-    const name = (r[SDO.AGENT] || 'Unknown').trim();
+    const name = (r[cols.AGENT] || 'Unknown').trim();
     if (!agentMap[name]) agentMap[name] = { scheduled: 0, activated: 0, canceled: 0 };
     agentMap[name].scheduled++;
-    if ((r[SDO.READY] || '').toUpperCase() === 'YES') agentMap[name].activated++;
+    if ((r[cols.READY] || '').toUpperCase() === 'YES') agentMap[name].activated++;
     if (isNoShow(r)) agentMap[name].canceled++;
   });
 
@@ -721,8 +692,12 @@ function renderSDOWidget() {
 // ============================================================
 
 function generateWBRDraft() {
-  const sdrVal  = metricValues['same_day_ready'];
-  const ad30Val = metricValues['active_day30'];
+  const wbr     = settings.wbrConfig || {};
+  const metrics = settings.metrics || [];
+  const m0      = metrics[0] || {};
+  const m1      = metrics[1] || {};
+  const sdrVal  = metricValues[m0.id];
+  const ad30Val = metricValues[m1.id];
   const sdr     = sdrVal?.current  ?? null;
   const sdrPrev = sdrVal?.previous ?? null;
   const ad30    = ad30Val?.current ?? null;
@@ -751,24 +726,28 @@ function generateWBRDraft() {
     ? ` This was primarily driven by ${sdo.canceled} Mx no-shows in SDO.`
     : '';
 
-  const sdrDisplay  = sdr  ? String(sdr)  : '[SDR%]';
-  const ad30Display = ad30 ? String(ad30) : '[AD30%]';
+  const sdrDisplay  = sdr  ? String(sdr)  : '[Metric 1 value]';
+  const ad30Display = ad30 ? String(ad30) : '[Metric 2 value]';
+  const teamName    = wbr.teamName || '[TEAM NAME]';
+  const authors     = wbr.authors  || '[Authors]';
+  const m0label     = m0.label || 'Metric 1';
+  const m1label     = m1.label || 'Metric 2';
 
   const draft =
-`INTEGRATIONS ONBOARDING  ${WBR_CONFIG.authors}
-TLDR: Performance is ${trend} with Same Day Readiness at ${sdrDisplay}${wowInline} and Active by Day 30 at ${ad30Display}${hasSDO ? `. SDO saw ${sdo.scheduled} bookings with ${sdo.activated} activations (${sdo.rate}% activation rate)` : ''}.
+`${teamName}  ${authors}
+TLDR: Performance is ${trend} with ${m0label} at ${sdrDisplay}${wowInline} and ${m1label} at ${ad30Display}${hasSDO ? `. SDO saw ${sdo.scheduled} bookings with ${sdo.activated} activations (${sdo.rate}% activation rate)` : ''}.
 Risks: None at this time
 
-North Star OKR	Q1 Exit	QTD Plan	This Week	WoW Change
-% Mx Setup Same Day	${WBR_CONFIG.sdrQ1Exit}	${WBR_CONFIG.sdrQTDPlan}	${sdrDisplay}	${wowLabel}
+North Star OKR	Prior Qtr Exit	QTD Plan	This Week	WoW Change
+${m0label}	${wbr.sdrQ1Exit || '[Prior Exit]'}	${wbr.sdrQTDPlan || '[QTD Plan]'}	${sdrDisplay}	${wowLabel}
 
-Team OKR	Q1 Exit	QTD Plan	QTD Actual	Q2 Goal
-% Active by Day 30	${WBR_CONFIG.ad30Q1Exit}	${WBR_CONFIG.ad30QTDPlan}	${ad30Display}	${WBR_CONFIG.ad30Goal}
+Team OKR	Prior Qtr Exit	QTD Plan	QTD Actual	Quarter Goal
+${m1label}	${wbr.ad30Q1Exit || '[Prior Exit]'}	${wbr.ad30QTDPlan || '[QTD Plan]'}	${ad30Display}	${wbr.ad30Goal || '[Goal]'}
 
 
 Pacing
-Same Day Readiness, Active by Day 30 Updates:
-TL;DR - This week onboarding landed at ${sdrDisplay}${wowInline} and ${ad30Display} Active by Day 30.${noShowRisk}
+${m0label}, ${m1label} Updates:
+TL;DR - This week onboarding landed at ${sdrDisplay}${wowInline} and ${ad30Display} ${m1label}.${noShowRisk}
 Impact/Risk - [Add impact/risk narrative]
 Next Steps - [Add next steps]
 
@@ -1084,6 +1063,24 @@ function deleteResource() {
 function openSettings() {
   document.getElementById('setting-client-id').value = settings.googleClientId || '';
   document.getElementById('setting-current-col').value = settings.currentCol || '';
+  document.getElementById('setting-perf-sheet-id').value = settings.performanceSheetId || '';
+  document.getElementById('setting-sdo-sheet-id').value = settings.sdoSheetId || '';
+  document.getElementById('setting-sdo-tab').value = settings.sdoTab || 'SDO Log';
+  const wbr = settings.wbrConfig || {};
+  document.getElementById('setting-wbr-team').value    = wbr.teamName   || '';
+  document.getElementById('setting-wbr-authors').value = wbr.authors    || '';
+  document.getElementById('setting-wbr-sdr-exit').value  = wbr.sdrQ1Exit  || '';
+  document.getElementById('setting-wbr-sdr-qtd').value   = wbr.sdrQTDPlan || '';
+  document.getElementById('setting-wbr-ad30-exit').value = wbr.ad30Q1Exit || '';
+  document.getElementById('setting-wbr-ad30-qtd').value  = wbr.ad30QTDPlan || '';
+  document.getElementById('setting-wbr-ad30-goal').value = wbr.ad30Goal   || '';
+  const cols = settings.sdoColumns || {};
+  document.getElementById('setting-sdo-col-ready').value       = cols.READY       ?? 1;
+  document.getElementById('setting-sdo-col-agent').value       = cols.AGENT       ?? 4;
+  document.getElementById('setting-sdo-col-date').value        = cols.DATE        ?? 5;
+  document.getElementById('setting-sdo-col-reschedule').value  = cols.RESCHEDULED ?? 14;
+  document.getElementById('setting-sdo-col-zoom').value        = cols.ZOOM_NOTES  ?? 17;
+  renderMetricsSettings();
   renderFilterTags();
   renderCategoryTagsInSettings();
   openModal('modal-settings');
@@ -1132,16 +1129,75 @@ function removeCat(i) {
 }
 
 function saveSettings() {
-  settings.googleClientId         = document.getElementById('setting-client-id').value.trim();
-  settings.currentCol             = document.getElementById('setting-current-col').value.replace(/[^a-zA-Z]/g, '').toUpperCase();
+  settings.googleClientId      = document.getElementById('setting-client-id').value.trim();
+  settings.currentCol          = document.getElementById('setting-current-col').value.replace(/[^a-zA-Z]/g, '').toUpperCase();
+  settings.performanceSheetId  = document.getElementById('setting-perf-sheet-id').value.trim();
+  settings.sdoSheetId          = document.getElementById('setting-sdo-sheet-id').value.trim();
+  settings.sdoTab              = document.getElementById('setting-sdo-tab').value.trim() || 'SDO Log';
+  settings.wbrConfig = {
+    teamName:    document.getElementById('setting-wbr-team').value.trim(),
+    authors:     document.getElementById('setting-wbr-authors').value.trim(),
+    sdrQ1Exit:   document.getElementById('setting-wbr-sdr-exit').value.trim(),
+    sdrQTDPlan:  document.getElementById('setting-wbr-sdr-qtd').value.trim(),
+    ad30Q1Exit:  document.getElementById('setting-wbr-ad30-exit').value.trim(),
+    ad30QTDPlan: document.getElementById('setting-wbr-ad30-qtd').value.trim(),
+    ad30Goal:    document.getElementById('setting-wbr-ad30-goal').value.trim()
+  };
+  settings.sdoColumns = {
+    READY:       parseInt(document.getElementById('setting-sdo-col-ready').value)      || 1,
+    AGENT:       parseInt(document.getElementById('setting-sdo-col-agent').value)      || 4,
+    DATE:        parseInt(document.getElementById('setting-sdo-col-date').value)       || 5,
+    RESCHEDULED: parseInt(document.getElementById('setting-sdo-col-reschedule').value) || 14,
+    ZOOM_NOTES:  parseInt(document.getElementById('setting-sdo-col-zoom').value)       || 17,
+    DURATION:    23
+  };
+  saveMetricsFromSettings();
   save();
   closeModal();
   renderCategoryTabs();
   renderResources();
   renderMeetings();
-  // Re-fetch metrics with updated column
-  if (accessToken) fetchSheetMetrics();
+  if (accessToken) { fetchSheetMetrics(); fetchSDOMetrics(); }
+  else if (!settings.performanceSheetId) renderMetricsNeedSetup();
   else renderMetricsNeedColumn();
+}
+
+function renderMetricsSettings() {
+  const list = document.getElementById('metrics-settings-list');
+  if (!list) return;
+  const metrics = settings.metrics || [];
+  list.innerHTML = metrics.map((m, i) => `
+    <div class="metric-settings-row">
+      <input type="text" class="ms-label" value="${escHtml(m.label)}" placeholder="Label (e.g. Same Day Ready)">
+      <input type="text" class="ms-tab" value="${escHtml(m.tab || '')}" placeholder="Sheet tab name">
+      <input type="number" class="ms-row" value="${m.row || ''}" placeholder="Row #" min="1">
+      <button class="btn btn-sm btn-ghost" style="color:var(--danger);flex-shrink:0" onclick="removeMetricSetting(${i})">✕</button>
+    </div>`
+  ).join('');
+}
+
+function addMetricSetting() {
+  if (!settings.metrics) settings.metrics = [];
+  settings.metrics.push({ id: 'metric_' + Date.now(), label: '', tab: '', row: 1 });
+  renderMetricsSettings();
+}
+
+function removeMetricSetting(i) {
+  settings.metrics.splice(i, 1);
+  renderMetricsSettings();
+}
+
+function saveMetricsFromSettings() {
+  const rows = document.querySelectorAll('.metric-settings-row');
+  settings.metrics = [...rows].map((row, i) => {
+    const existingId = (settings.metrics[i] || {}).id || ('metric_' + Date.now() + '_' + i);
+    return {
+      id:    existingId,
+      label: row.querySelector('.ms-label').value.trim(),
+      tab:   row.querySelector('.ms-tab').value.trim(),
+      row:   parseInt(row.querySelector('.ms-row').value) || 1
+    };
+  }).filter(m => m.label && m.tab);
 }
 
 // ============================================================
@@ -1262,8 +1318,9 @@ function init() {
   renderCategoryTabs();
   renderResources();
   renderSuggested();
-  renderMetricsNeedColumn();
-  loadSavedWBRDraft(); // Show performance bar immediately; updates after auth + column set
+  if (!settings.performanceSheetId) renderMetricsNeedSetup();
+  else renderMetricsNeedColumn();
+  loadSavedWBRDraft();
   applyCollapsed();
 
   // Keyboard shortcut: Escape to close modal
