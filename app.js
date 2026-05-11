@@ -430,9 +430,12 @@ async function fetchSheetMetrics() {
     });
 
     const vrs = res.result.valueRanges || [];
+    console.log('[DEBUG] Ranges requested:', allRanges);
+    console.log('[DEBUG] API response:', vrs.map(v => ({ range: v.range, value: v.values?.[0]?.[0] ?? 'EMPTY' })));
     metrics.forEach((m, i) => {
       const current  = vrs[i]?.values?.[0]?.[0] ?? '—';
       const previous = prev ? (vrs[metrics.length + i]?.values?.[0]?.[0] ?? null) : null;
+      console.log(`[DEBUG] ${m.label}: current=${current}, previous=${previous}`);
       metricValues[m.id] = { current, previous, updatedAt: new Date() };
     });
 
