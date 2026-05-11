@@ -1203,6 +1203,11 @@ a:hover { text-decoration: underline; }
 .trend-down    { color: var(--danger); }
 .trend-neutral { color: var(--text-muted); }
 
+.metric-prev {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
 .metric-updated {
   font-size: 11px;
   color: var(--text-light);
