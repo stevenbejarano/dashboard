@@ -42,7 +42,10 @@ const DEFAULT_SETTINGS = {
     'Resources and Process Docs',
     'Volume Tracking'
   ],
-  metrics: []
+  metrics: [
+    { id: 'same_day_ready', label: 'Same Day Ready',   tab: 'Q2 Weekly Trackers', row: 37 },
+    { id: 'active_day30',   label: 'Active by Day 30', tab: 'Q2 Weekly Trackers', row: 94 }
+  ]
 };
 
 const DEFAULT_RESOURCES = [
@@ -395,7 +398,10 @@ async function fetchSheetMetrics() {
   const metrics = (settings.metrics || []).filter(m => m.tab && m.row);
   const col = (settings.currentCol || '').replace(/[^a-zA-Z]/g, '').toUpperCase();
 
-  if (!metrics.length) return;
+  if (!metrics.length) {
+    renderMetricsNeedSetup();
+    return;
+  }
 
   if (!settings.performanceSheetId) {
     renderMetricsNeedSetup();
