@@ -414,6 +414,7 @@ async function detectCurrentCol(tab, dateRow) {
       valueRenderOption: 'FORMATTED_VALUE'
     });
     const row = res.result.values?.[0] || [];
+    console.log('[DATE ROW] raw cells:', row.slice(0, 30));
     const today = new Date(); today.setHours(23, 59, 59, 999);
     let bestIdx = -1, bestDate = null;
     row.forEach((cell, idx) => {
@@ -422,8 +423,10 @@ async function detectCurrentCol(tab, dateRow) {
         bestDate = dt; bestIdx = idx;
       }
     });
+    console.log('[DATE ROW] detected col:', bestIdx >= 0 ? numToCol(bestIdx + 1) : 'NONE', '| bestDate:', bestDate);
     return bestIdx >= 0 ? numToCol(bestIdx + 1) : null;
-  } catch {
+  } catch (e) {
+    console.error('[DATE ROW] error:', e);
     return null;
   }
 }
