@@ -446,6 +446,8 @@ async function fetchSheetMetrics() {
 
   renderMetricsLoading();
 
+  console.log('[METRICS] perfDateRow:', settings.perfDateRow, '| currentCol:', settings.currentCol);
+
   let col = (settings.currentCol || '').replace(/[^a-zA-Z]/g, '').toUpperCase();
 
   if (settings.perfDateRow) {
