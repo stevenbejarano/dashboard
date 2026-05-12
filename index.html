@@ -174,8 +174,11 @@
 
         <div class="settings-section">
           <h4>Performance — Current Week Column</h4>
-          <p class="settings-hint">Enter the column letter from your performance sheet that contains this week's data (e.g. <strong>I</strong>, <strong>J</strong>, <strong>K</strong>…). Update this each week. The previous column is used automatically for trend arrows.</p>
-          <label>Current column
+          <p class="settings-hint">Enter the row number containing week dates in your sheet (e.g. <strong>64</strong>). The dashboard will auto-detect the current column every week — no more manual updates.</p>
+          <label>Date row <span class="hint">(recommended)</span>
+            <input type="number" id="setting-perf-date-row" placeholder="e.g. 64" min="1" style="width:100px">
+          </label>
+          <label style="margin-top:8px">Current column <span class="hint">(fallback if date row not set)</span>
             <input type="text" id="setting-current-col" placeholder="e.g. I" maxlength="3" style="width:80px;text-transform:uppercase">
           </label>
         </div>
@@ -307,6 +310,6 @@
 
   </div>
 
-  <script src="app.js?v=11"></script>
+  <script src="app.js?v=12"></script>
 </body>
 </html>

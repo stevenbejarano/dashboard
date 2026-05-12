@@ -11,6 +11,7 @@
 const DEFAULT_SETTINGS = {
   googleClientId: '',
   currentCol: '',
+  perfDateRow: '',
   performanceSheetId: '',
   sdoSheetId: '',
   sdoTab: 'SDO Log',
@@ -394,9 +395,41 @@ function prevColumn(col) {
   return n > 1 ? numToCol(n - 1) : null;
 }
 
+function parseSheetDate(str) {
+  const parts = String(str || '').split('/');
+  if (parts.length < 2) return null;
+  const m = parseInt(parts[0]), d = parseInt(parts[1]);
+  if (isNaN(m) || isNaN(d)) return null;
+  const yr = new Date().getFullYear();
+  const dt = new Date(yr, m - 1, d);
+  if (dt > new Date(Date.now() + 180 * 86400000)) dt.setFullYear(yr - 1);
+  return dt;
+}
+
+async function detectCurrentCol(tab, dateRow) {
+  try {
+    const res = await gapi.client.sheets.spreadsheets.values.get({
+      spreadsheetId: settings.performanceSheetId,
+      range: `'${tab}'!A${dateRow}:ZZ${dateRow}`,
+      valueRenderOption: 'FORMATTED_VALUE'
+    });
+    const row = res.result.values?.[0] || [];
+    const today = new Date(); today.setHours(23, 59, 59, 999);
+    let bestIdx = -1, bestDate = null;
+    row.forEach((cell, idx) => {
+      const dt = parseSheetDate(cell);
+      if (dt && dt <= today && (bestDate === null || dt > bestDate)) {
+        bestDate = dt; bestIdx = idx;
+      }
+    });
+    return bestIdx >= 0 ? numToCol(bestIdx + 1) : null;
+  } catch {
+    return null;
+  }
+}
+
 async function fetchSheetMetrics() {
   const metrics = (settings.metrics || []).filter(m => m.tab && m.row);
-  const col = (settings.currentCol || '').replace(/[^a-zA-Z]/g, '').toUpperCase();
 
   if (!metrics.length) {
     renderMetricsNeedSetup();
@@ -408,12 +441,19 @@ async function fetchSheetMetrics() {
     return;
   }
 
+  renderMetricsLoading();
+
+  let col = (settings.currentCol || '').replace(/[^a-zA-Z]/g, '').toUpperCase();
+
+  if (settings.perfDateRow) {
+    const autoCol = await detectCurrentCol(metrics[0].tab, parseInt(settings.perfDateRow));
+    if (autoCol) col = autoCol;
+  }
+
   if (!col) {
     renderMetricsNeedColumn();
     return;
   }
-
-  renderMetricsLoading();
 
   const prev = prevColumn(col);
 
@@ -1073,6 +1113,7 @@ function deleteResource() {
 function openSettings() {
   document.getElementById('setting-client-id').value = settings.googleClientId || '';
   document.getElementById('setting-current-col').value = settings.currentCol || '';
+  document.getElementById('setting-perf-date-row').value = settings.perfDateRow || '';
   document.getElementById('setting-perf-sheet-id').value = settings.performanceSheetId || '';
   document.getElementById('setting-sdo-sheet-id').value = settings.sdoSheetId || '';
   document.getElementById('setting-sdo-tab').value = settings.sdoTab || 'SDO Log';
@@ -1141,6 +1182,7 @@ function removeCat(i) {
 function saveSettings() {
   settings.googleClientId      = document.getElementById('setting-client-id').value.trim();
   settings.currentCol          = document.getElementById('setting-current-col').value.replace(/[^a-zA-Z]/g, '').toUpperCase();
+  settings.perfDateRow         = document.getElementById('setting-perf-date-row').value.trim();
   settings.performanceSheetId  = document.getElementById('setting-perf-sheet-id').value.trim();
   settings.sdoSheetId          = document.getElementById('setting-sdo-sheet-id').value.trim();
   settings.sdoTab              = document.getElementById('setting-sdo-tab').value.trim() || 'SDO Log';
