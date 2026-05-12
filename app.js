@@ -471,6 +471,7 @@ async function fetchSheetMetrics() {
     });
 
     const vrs = res.result.valueRanges || [];
+    console.log('[FETCH]', vrs.map(v => v.range + '=' + (v.values?.[0]?.[0] ?? 'EMPTY')));
     metrics.forEach((m, i) => {
       const current  = vrs[i]?.values?.[0]?.[0] ?? '—';
       const previous = prev ? (vrs[metrics.length + i]?.values?.[0]?.[0] ?? null) : null;
