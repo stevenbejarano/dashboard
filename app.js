@@ -62,8 +62,10 @@ let collapsed   = loadJSON('dash_collapsed', { meetings: false, resources: false
 let resourcesExpanded = false;
 let meetingsExpanded  = false;
 let meetings      = [];   // from Google Calendar (runtime only)
-let metricValues  = {};   // { metricId: { current, previous, updatedAt } }
-let sdoMetrics    = null; // computed from SDO Log sheet
+let metricValues    = {};   // { metricId: { current, previous, updatedAt } }
+let sdoMetrics      = null; // computed from SDO Log sheet
+let detectedBaseCol = '';   // cached current-week column; reset on settings save
+let perfSdoFilter   = 'this-week'; // shared filter: 'this-week'|'last-week'|'last-month'
 let activeCategory = 'all';
 let showFiltered   = false;
 let tokenClient    = null;
@@ -181,6 +183,7 @@ function onAuthSuccess(tokenResponse) {
   document.getElementById('calendar-prompt').classList.add('hidden');
   document.getElementById('meetings-list').classList.remove('hidden');
 
+  renderPerfSdoFilterBar();
   Promise.all([fetchMeetings(), fetchSheetMetrics(), fetchSDOMetrics()]);
 
   // Auto-refresh token 5 min before expiry (tokens last ~1 hour)
@@ -395,6 +398,13 @@ function prevColumn(col) {
   return n > 1 ? numToCol(n - 1) : null;
 }
 
+function getColForFilter(baseCol, filter) {
+  const n = colToNum(baseCol);
+  if (filter === 'last-week')  return numToCol(Math.max(1, n - 1));
+  if (filter === 'last-month') return numToCol(Math.max(1, n - 4));
+  return baseCol;
+}
+
 function parseSheetDate(str) {
   const parts = String(str || '').split('/');
   if (parts.length < 2) return null;
@@ -444,18 +454,17 @@ async function fetchSheetMetrics() {
 
   renderMetricsLoading();
 
-  let col = (settings.currentCol || '').replace(/[^a-zA-Z]/g, '').toUpperCase();
-
-  if (settings.perfDateRow) {
-    const autoCol = await detectCurrentCol(metrics[0].tab, parseInt(settings.perfDateRow));
-    if (autoCol) col = autoCol;
+  if (!detectedBaseCol) {
+    let baseCol = (settings.currentCol || '').replace(/[^a-zA-Z]/g, '').toUpperCase();
+    if (settings.perfDateRow) {
+      const autoCol = await detectCurrentCol(metrics[0].tab, parseInt(settings.perfDateRow));
+      if (autoCol) baseCol = autoCol;
+    }
+    if (!baseCol) { renderMetricsNeedColumn(); return; }
+    detectedBaseCol = baseCol;
   }
 
-  if (!col) {
-    renderMetricsNeedColumn();
-    return;
-  }
-
+  const col  = getColForFilter(detectedBaseCol, perfSdoFilter);
   const prev = prevColumn(col);
 
   // Build one range per metric for current week, plus one for previous week (trend)
@@ -471,7 +480,6 @@ async function fetchSheetMetrics() {
     });
 
     const vrs = res.result.valueRanges || [];
-    console.log('[FETCH]', vrs.map(v => v.range + '=' + (v.values?.[0]?.[0] ?? 'EMPTY')));
     metrics.forEach((m, i) => {
       const current  = vrs[i]?.values?.[0]?.[0] ?? '—';
       const previous = prev ? (vrs[metrics.length + i]?.values?.[0]?.[0] ?? null) : null;
@@ -559,9 +567,13 @@ function renderPerformanceWidget() {
       </div>`;
   }).join('');
 
+  const periodLabels = { 'this-week': '', 'last-week': 'Last Week', 'last-month': 'Last Month' };
+  const periodBadge  = periodLabels[perfSdoFilter]
+    ? `<span class="period-badge">${periodLabels[perfSdoFilter]}</span>` : '';
+
   bar.innerHTML = `
     <div class="performance-header">
-      <span class="section-label" style="margin:0">Performance</span>
+      <span class="section-label" style="margin:0">Performance ${periodBadge}</span>
       <button class="btn-refresh-metrics" onclick="fetchSheetMetrics()" title="Refresh">↻ Refresh</button>
     </div>
     <div class="metric-cards">${cards}</div>`;
@@ -594,10 +606,7 @@ function renderMetricsError() {
 // SDO LOG METRICS
 // ============================================================
 
-let sdoFilter   = 'this-week';  // 'this-week' | 'last-week' | 'last-month'
-let sdoAllRows  = [];           // cached raw rows from last fetch
-
-const SDO_FILTER_LABELS = { 'this-week': 'This Week', 'last-week': 'Last Week', 'last-month': 'Last Month' };
+let sdoAllRows  = [];  // cached raw rows from last fetch
 
 async function fetchSDOMetrics() {
   if (!accessToken) return;
@@ -619,7 +628,7 @@ async function fetchSDOMetrics() {
       valueRenderOption: 'FORMATTED_VALUE'
     });
     sdoAllRows = res.result.values || [];
-    sdoMetrics = computeSDOMetrics(sdoAllRows, sdoFilter);
+    sdoMetrics = computeSDOMetrics(sdoAllRows, perfSdoFilter);
     renderSDOWidget();
   } catch (e) {
     console.error('SDO fetch failed', e);
@@ -627,10 +636,22 @@ async function fetchSDOMetrics() {
   }
 }
 
-function setSDOFilter(filter) {
-  sdoFilter = filter;
-  sdoMetrics = computeSDOMetrics(sdoAllRows, sdoFilter);
+function setPerfSdoFilter(filter) {
+  perfSdoFilter = filter;
+  renderPerfSdoFilterBar();
+  if (accessToken) fetchSheetMetrics();
+  sdoMetrics = computeSDOMetrics(sdoAllRows, filter);
   renderSDOWidget();
+}
+
+function renderPerfSdoFilterBar() {
+  const bar = document.getElementById('perf-sdo-filter-bar');
+  if (!bar) return;
+  const labels = { 'this-week': 'This Week', 'last-week': 'Last Week', 'last-month': 'Last Month' };
+  bar.innerHTML = Object.entries(labels).map(([key, label]) =>
+    `<button class="tab-btn${perfSdoFilter === key ? ' active' : ''}" onclick="setPerfSdoFilter('${key}')">${label}</button>`
+  ).join('');
+  bar.classList.remove('hidden');
 }
 
 function getDateBounds(filter) {
@@ -702,10 +723,6 @@ function renderSDOWidget() {
   if (!el || !sdoMetrics) return;
   const { scheduled, activated, canceled, rescheduled, rate, agents } = sdoMetrics;
 
-  const filterBtns = Object.entries(SDO_FILTER_LABELS).map(([key, label]) =>
-    `<button class="tab-btn${sdoFilter === key ? ' active' : ''}" onclick="setSDOFilter('${key}')">${label}</button>`
-  ).join('');
-
   const agentRows = agents.map(a => `
     <tr>
       <td>${escHtml(a.name)}</td>
@@ -718,10 +735,7 @@ function renderSDOWidget() {
   el.innerHTML = `
     <div class="performance-header">
       <span class="section-label" style="margin:0">Same Day Onboarding</span>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <div class="sdo-filter-tabs">${filterBtns}</div>
-        <button class="btn-refresh-metrics" onclick="fetchSDOMetrics()" title="Refresh">&#8635;</button>
-      </div>
+      <button class="btn-refresh-metrics" onclick="fetchSDOMetrics()" title="Refresh">&#8635;</button>
     </div>
     <div class="metric-cards">
       <div class="metric-card"><div class="metric-value">${scheduled}</div><div class="metric-label">Scheduled</div></div>
@@ -1207,6 +1221,7 @@ function saveSettings() {
   };
   saveMetricsFromSettings();
   save();
+  detectedBaseCol = ''; // force re-detection after settings change
   closeModal();
   renderCategoryTabs();
   renderResources();
